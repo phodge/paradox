@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "paradox-codegen"
+version = "0.3.0"
+description = ""
+license = "MIT"
+authors = []
+packages = [
+    { include = "paradox" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+# needed for typing_extensions.Literal
+typing-extensions = {version = "^3.7.4", python = "<3.8"}
+
+[tool.poetry.dev-dependencies]
+mypy = "^0.770"
+
+[build-system]
+requires = ["setuptools>=40.0", "wheel", "pytoml"]
+
