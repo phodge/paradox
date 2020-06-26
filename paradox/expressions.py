@@ -69,7 +69,7 @@ class PanExpr(abc.ABC):
     def lengthexpr(self) -> "PanLengthExpr":
         return PanLengthExpr(self)
 
-    def isnullexpr(self) -> "PanIsNullExpr":
+    def isnullexpr(self) -> "PanExpr":
         return PanIsNullExpr(self)
 
     def getNegated(self) -> "PanExpr":
