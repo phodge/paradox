@@ -988,6 +988,10 @@ class ClassSpec(Statement):
         if appendto:
             appendto.also(self)
 
+    @property
+    def classname(self) -> str:
+        return self._name
+
     def createMethod(
         self,
         name: str,
