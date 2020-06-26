@@ -535,6 +535,24 @@ class PanPyOnly(PanExpr):
         raise Exception("PanPyOnly is unable to produce a PHP expression")
 
 
+class PanPHPOnly(PanExpr):
+    def __init__(self, code: str, precedence: PHPPrecedence = PHPPrecedence.MultDiv) -> None:
+        self._code = code
+        self._prec = precedence
+
+    def getPanType(self) -> CrossType:
+        raise Exception("TODO: not implemented")
+
+    def getPyExpr(self) -> Tuple[str, PyPrecedence]:
+        raise Exception("PanPHPOnly is unable to produce a Python expression")
+
+    def getTSExpr(self) -> Tuple[str, TSPrecedence]:
+        raise Exception("PanPyOnly is unable to produce a TS expression")
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        return self._code, self._prec
+
+
 class PanAndOr(PanExpr):
     def __init__(self, operation: Literal["AND", "OR"], arguments: List[PanExpr]) -> None:
         super().__init__()
@@ -756,6 +774,10 @@ def pandict(pairs: Mapping[str, Pannable], valuetype: CrossType = None) -> PanDi
 
 def pyexpr(code: str, prec: PyPrecedence = PyPrecedence.MultDiv) -> PanPyOnly:
     return PanPyOnly(code, prec)
+
+
+def phpexpr(code: str, prec: PHPPrecedence = PHPPrecedence.MultDiv) -> PanPHPOnly:
+    return PanPHPOnly(code, prec)
 
 
 def tsexpr(code: str, prec: TSPrecedence = TSPrecedence.MultDiv) -> PanTSOnly:
