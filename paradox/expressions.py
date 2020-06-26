@@ -34,24 +34,38 @@ class TSPrecedence(enum.Enum):
     AddSub = 4
 
 
-def _wrapdot(pair: Tuple[str, Union[PyPrecedence, TSPrecedence]]) -> str:
+class PHPPrecedence(enum.Enum):
+    Literal = 1
+    Arrow = 2
+    MultDiv = 3
+
+
+def _wrapdot(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]) -> str:
     code, prec = pair
     if isinstance(prec, PyPrecedence):
         if prec.value >= PyPrecedence.Dot.value:
             code = "(" + code + ")"
-    if isinstance(prec, TSPrecedence):
+    elif isinstance(prec, TSPrecedence):
         if prec.value >= TSPrecedence.Dot.value:
+            code = "(" + code + ")"
+    else:
+        assert isinstance(prec, PHPPrecedence)
+        if prec.value >= PHPPrecedence.Arrow.value:
             code = "(" + code + ")"
     return code
 
 
-def _wrapmult(pair: Tuple[str, Union[PyPrecedence, TSPrecedence]]) -> str:
+def _wrapmult(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]) -> str:
     code, prec = pair
     if isinstance(prec, PyPrecedence):
         if prec.value >= PyPrecedence.MultDiv.value:
             code = "(" + code + ")"
-    if isinstance(prec, TSPrecedence):
+    elif isinstance(prec, TSPrecedence):
         if prec.value >= TSPrecedence.MultDiv.value:
+            code = "(" + code + ")"
+    else:
+        assert isinstance(prec, PHPPrecedence)
+        if prec.value >= PHPPrecedence.MultDiv.value:
             code = "(" + code + ")"
     return code
 
