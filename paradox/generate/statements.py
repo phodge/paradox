@@ -262,7 +262,7 @@ class HardCodedStatement(StatementWithNoImports):
 
     def writepy(self, w: FileWriter) -> None:
         if self._python is None:
-            raise Exception("Not implemented in Pythnon")
+            raise Exception("Not implemented in Python")
         w.line0(self._python)
 
 
@@ -282,7 +282,7 @@ class RawTypescript(StatementWithNoImports):
             w.line0(stmt)
 
     def writepy(self, w: FileWriter) -> None:
-        raise Exception("Not implemented in Pythnon")
+        raise Exception("Not implemented in Python")
 
 
 class SimpleRaise(StatementWithNoImports):
