@@ -364,6 +364,10 @@ class PanVar(PanExpr):
         self._name = name
         self._type = type
 
+    @property
+    def rawname(self) -> str:
+        return self._name
+
     def getPanType(self) -> CrossType:
         if self._type is None:
             raise Exception("This PanVar has no type")
