@@ -807,3 +807,7 @@ def not_(arg: Pannable) -> PanNot:
 
 def exacteq_(arg1: Pannable, arg2: Pannable) -> PanCompare:
     return PanCompare("===", pan(arg1), pan(arg2))
+
+
+def isnull(arg: Pannable) -> PanExpr:
+    return PanIsNullExpr(pan(arg))
