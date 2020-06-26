@@ -139,3 +139,48 @@ class FileTS(FileSpec):
 
         # TODO: use "prettier" to format the file, maybe
         pass
+
+
+class FilePHP(FileSpec):
+    def __init__(self, target: Path, *, namespace: str = None) -> None:
+        super().__init__(target)
+
+        self._namespace = namespace
+
+    def writefile(self) -> None:
+        # group imports by source module so that we can sort them
+        imports: Dict[str, Optional[str]] = {}
+        for original, alias in self.contents.getImportsPHP():
+            try:
+                assert imports[original] == alias
+            except KeyError:
+                imports[original] = alias
+
+        with self.target.open('w') as f:
+            # first, write out any file header
+            f.write("<?php\n\n")
+            for text in self._filecomments:
+                f.write(f"// {text}\n")
+            if len(self._filecomments):
+                f.write("\n")
+
+            # next, write out file namespace
+            if self._namespace:
+                f.write(f"namespace {self._namespace};\n\n")
+
+            # next, write out imports
+            wroteimports = False
+            for original, alias in sorted(imports.items()):
+                if alias:
+                    f.write(f"use {original} as {alias};\n")
+                else:
+                    f.write(f"use {original};\n")
+                wroteimports = True
+            if wroteimports:
+                f.write("\n")
+
+            self.contents.writephp(FileWriter(f, '  '))
+
+    def makepretty(self) -> None:
+        # TODO: run php-cs-fixer over the file to format it correctly
+        pass
