@@ -1224,12 +1224,12 @@ class ClassSpec(Statement):
         ))
         return PanProp(name, crosstype, None)
 
-    def _getInitSpec(self, lang: Literal["python", "typescript"]) -> Optional[FunctionSpec]:
+    def _getInitSpec(self, lang: Literal["python", "typescript", "php"]) -> Optional[FunctionSpec]:
         initdefaults = self._initdefaults
 
-        if lang == "typescript":
-            # if the language is typescript, we don't need to assign PanLiteral default values
-            # because these were already done in the class body
+        if lang in ("typescript", "php"):
+            # if the language is typescript or PHP, we don't need to assign PanLiteral default
+            # values because these were already done in the class body
             initdefaults = [d for d in initdefaults if not isinstance(d[1], PanLiteral)]
 
         # do we actually need the __init__() method or was it a noop?
@@ -1254,6 +1254,7 @@ class ClassSpec(Statement):
             initspec.also(HardCodedStatement(
                 python='super().__init__(*args, **kwargs)',
                 typescript='super();',
+                php='parent::__construct();',
             ))
         elif self._tsbase and lang == "typescript":
             initspec.also(HardCodedStatement(
