@@ -40,6 +40,10 @@ class PHPPrecedence(enum.Enum):
     MultDiv = 3
 
 
+def _phpstr(value: str) -> str:
+    return "'{}'".format(value.replace("\\", "\\\\").replace("'", "\\'"))
+
+
 def _wrapdot(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]) -> str:
     code, prec = pair
     if isinstance(prec, PyPrecedence):
@@ -113,6 +117,16 @@ class PanExpr(abc.ABC):
         things.
         """
 
+    @abc.abstractmethod
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        """
+        Get a string containing a PHP expression representing the PanExpr.
+
+        The 2nd returned item is a PHPPrecedence indicating the expressions precedence level. If
+        you are trying to make an expression from two other expressions you may need to wrap one in
+        parenthesis if the PHPPrecedence is too high.
+        """
+
 
 class PanLiteral(PanExpr):
     def __init__(self, val: Union[int, str, bool, None]) -> None:
@@ -141,6 +155,16 @@ class PanLiteral(PanExpr):
             return "null", TSPrecedence.Literal
         return repr(self._val), TSPrecedence.Literal
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        if self._val is None:
+            return "null", PHPPrecedence.Literal
+        if isinstance(self._val, int):
+            return repr(self._val), PHPPrecedence.Literal
+        if isinstance(self._val, bool):
+            return ('true' if self._val else 'false'), PHPPrecedence.Literal
+        assert isinstance(self._val, str)
+        return _phpstr(self._val), PHPPrecedence.Literal
+
     def getRawStr(self) -> str:
         assert isinstance(self._val, str)
         return self._val
@@ -155,6 +179,9 @@ class PanOmit(PanExpr):
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         return "undefined", TSPrecedence.Literal
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        raise NotImplementedError("PHP has no way to express omitted arguments")
 
 
 class PanList(PanExpr):
@@ -174,6 +201,10 @@ class PanList(PanExpr):
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         items = [v.getTSExpr()[0] for v in self._values]
         return '[' + ', '.join(items) + ']', TSPrecedence.Literal
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        items = [v.getPHPExpr()[0] for v in self._values]
+        return '[' + ', '.join(items) + ']', PHPPrecedence.Literal
 
     def panAppend(self, extra: PanExpr) -> None:
         self._values.append(extra)
@@ -206,6 +237,11 @@ class PanDict(PanExpr):
         code = "{" + ", ".join(inner) + "}"
         return code, TSPrecedence.Literal
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        inner = [_phpstr(k) + " => " + v.getPHPExpr()[0] for k, v in self._pairs.items()]
+        code = "[" + ", ".join(inner) + "]"
+        return code, PHPPrecedence.Literal
+
     def addPair(self, key: PanExpr, val: PanExpr) -> None:
         assert isinstance(key, PanLiteral), "PanDict currently only supports str keys"
         assert isinstance(key.getPanType(), CrossStr), "PanDict currently only supports str keys"
@@ -236,6 +272,9 @@ class PanCast(PanExpr):
             valexpr = "(" + valexpr + ")"
         return f"({valexpr} as {typeexpr})", TSPrecedence.Literal
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        raise NotImplementedError("PanCast is not implemented in PHP")
+
 
 class _PanItemAccess(PanExpr):
     _target: PanExpr
@@ -252,6 +291,16 @@ class _PanItemAccess(PanExpr):
         if targetprec.value > TSPrecedence.Dot.value:
             targetstr = "(" + targetstr + ")"
         return targetstr + "[" + repr(self._idx) + "]", TSPrecedence.Dot
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        targetstr, targetprec = self._target.getPHPExpr()
+        if targetprec.value > PHPPrecedence.Arrow.value:
+            targetstr = "(" + targetstr + ")"
+
+        if isinstance(self._idx, int):
+            return targetstr + "[" + repr(self._idx) + "]", PHPPrecedence.Arrow
+
+        return targetstr + "[" + _phpstr(self._idx) + "]", PHPPrecedence.Arrow
 
 
 class PanIndexAccess(_PanItemAccess):
@@ -296,6 +345,9 @@ class PanVar(PanExpr):
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         return self._name, TSPrecedence.Literal
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        return '$' + self._name, PHPPrecedence.Literal
+
     def __getitem__(self, idx: Union[int, str]) -> Union[PanIndexAccess, PanKeyAccess]:
         if isinstance(idx, int):
             assert idx == 0
@@ -331,6 +383,14 @@ class PanProp(PanVar):
         if ownerprec.value > TSPrecedence.Dot.value:
             ownerexpr = "(" + ownerexpr + ")"
         return ownerexpr + "." + self._name, TSPrecedence.Dot
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        if self._owner is None:
+            return '$this->' + self._name, PHPPrecedence.Arrow
+        ownerexpr, ownerprec = self._owner.getPHPExpr()
+        if ownerprec.value > PHPPrecedence.Arrow.value:
+            ownerexpr = "(" + ownerexpr + ")"
+        return ownerexpr + "->" + self._name, PHPPrecedence.Arrow
 
 
 class PanCall(PanExpr):
@@ -387,6 +447,18 @@ class PanCall(PanExpr):
             target = "(" + target + ")"
         return target + "(" + argstr + ")", TSPrecedence.Dot
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        argstr = ", ".join(a.getPHPExpr()[0] for a in self._pargs)
+        assert not len(self._kwargs), "KWArgs not supported in PHP"
+
+        if isinstance(self._target, str):
+            return f"{self._target}({argstr})", PHPPrecedence.Arrow
+
+        target, targetprec = self._target.getPHPExpr()
+        if targetprec.value > PHPPrecedence.Arrow.value:
+            target = "(" + target + ")"
+        return target + "(" + argstr + ")", PHPPrecedence.Arrow
+
 
 class PanStringBuilder(PanExpr):
     _parts: List[PanExpr]
@@ -441,6 +513,9 @@ class PanTSOnly(PanExpr):
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         return self._code, self._prec
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        raise Exception("PanTSOnly is unable to produce a PHP expression")
+
 
 class PanPyOnly(PanExpr):
     def __init__(self, code: str, precedence: PyPrecedence = PyPrecedence.MultDiv) -> None:
@@ -455,6 +530,9 @@ class PanPyOnly(PanExpr):
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         raise Exception("PanPyOnly is unable to produce a TS expression")
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        raise Exception("PanPyOnly is unable to produce a PHP expression")
 
 
 class PanAndOr(PanExpr):
@@ -482,6 +560,17 @@ class PanAndOr(PanExpr):
         each = [f"({a.getPyExpr()[0]})" for a in self._arguments]
         join = " || " if self._operation == "OR" else " && "
         return f"!!({join.join(each)})", TSPrecedence.Literal
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        # we want to wrap args that have precedence higher than ->
+        args = [_wrapdot(arg.getPHPExpr()) for arg in self._arguments]
+
+        if len(args) == 1:
+            return "(bool)" + args[0], PHPPrecedence.MultDiv
+
+        # NOTE: we wrap each expr in parenthesis to avoid potential precedence issues
+        join = " || " if self._operation == "OR" else " && "
+        return join.join(args), PHPPrecedence.MultDiv
 
 
 class PanNot(PanExpr):
@@ -513,6 +602,16 @@ class PanNot(PanExpr):
 
         return "not " + _wrapmult(self._arg.getTSExpr()), TSPrecedence.MultDiv
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        try:
+            neg = self._arg.getNegated()
+        except NotImplementedError:
+            pass
+        else:
+            return neg.getPHPExpr()
+
+        return "!" + _wrapmult(self._arg.getPHPExpr()), PHPPrecedence.MultDiv
+
 
 class PanLengthExpr(PanExpr):
     def __init__(self, target: PanExpr) -> None:
@@ -528,6 +627,10 @@ class PanLengthExpr(PanExpr):
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         return _wrapdot(self._target.getTSExpr()) + ".length", TSPrecedence.Dot
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        inner = self._target.getPHPExpr()[0]
+        return f"count({inner})", PHPPrecedence.Literal
 
 
 class PanIsNullExpr(PanExpr):
@@ -552,6 +655,10 @@ class PanIsNullExpr(PanExpr):
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         comp = " !== null" if self._negated else " === null"
         return _wrapdot(self._target.getTSExpr()) + comp, TSPrecedence.AddSub
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        comp = " !== null" if self._negated else " === null"
+        return _wrapdot(self._target.getPHPExpr()) + comp, PHPPrecedence.MultDiv
 
 
 class PanCompare(PanExpr):
@@ -597,6 +704,12 @@ class PanCompare(PanExpr):
         _arg1 = _wrapmult(self._arg1.getTSExpr())
         _arg2 = _wrapmult(self._arg2.getTSExpr())
         return f"{_arg1} {comp} {_arg2}", TSPrecedence.MultDiv
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        comp = self._getComp()
+        _arg1 = _wrapmult(self._arg1.getTSExpr())
+        _arg2 = _wrapmult(self._arg2.getTSExpr())
+        return f"{_arg1} {comp} {_arg2}", PHPPrecedence.MultDiv
 
 
 # helpers
