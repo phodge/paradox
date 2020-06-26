@@ -285,9 +285,15 @@ class PanExprStatement(StatementWithNoImports):
 
 class HardCodedStatement(StatementWithNoImports):
     """Used for simple statements that only need to work in Python."""
-    def __init__(self, python: str = None, typescript: str = None) -> None:
+    def __init__(
+        self,
+        python: str = None,
+        typescript: str = None,
+        php: str = None,
+    ) -> None:
         self._python = python
         self._typescript = typescript
+        self._php = php
 
     def writets(self, w: FileWriter) -> None:
         if self._typescript is None:
@@ -298,6 +304,11 @@ class HardCodedStatement(StatementWithNoImports):
         if self._python is None:
             raise Exception("Not implemented in Python")
         w.line0(self._python)
+
+    def writephp(self, w: FileWriter) -> None:
+        if self._php is None:
+            raise Exception("Not implemented in PHP")
+        w.line0(self._php)
 
 
 class RawTypescript(StatementWithNoImports):
