@@ -46,6 +46,25 @@ class CrossType(abc.ABC):
         things.
         """
 
+    @abc.abstractmethod
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        """
+        Get the PHP Type strings for this CrossType.
+
+        The first string is the PHP in-language type that can be used for argument types. E.g.
+
+            function(array $n) ...
+
+        The second string is the phpDocumentor type that can be used in phpDocumentor comments.
+        E.g.:
+
+            /** @param int[] $n */
+
+        The 3rd return value is a boolean indicating whether the type string is "self-contained"
+        enough that it can be combined with a suffix like "[]" to indicate it is an array of
+        things.
+        """
+
 
 class CrossAny(CrossType):
     def __init__(self) -> None:
@@ -56,6 +75,9 @@ class CrossAny(CrossType):
 
     def getTSType(self) -> Tuple[str, bool]:
         return "any", True
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        return None, "mixed", True
 
 
 class CrossStr(CrossType):
@@ -68,6 +90,9 @@ class CrossStr(CrossType):
     def getPyType(self) -> Tuple[str, bool]:
         return "str", False
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        return "string", "string", True
+
 
 class CrossNum(CrossType):
     def __init__(self) -> None:
@@ -78,6 +103,9 @@ class CrossNum(CrossType):
 
     def getTSType(self) -> Tuple[str, bool]:
         return "number", True
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        return "int", "int", True
 
 
 class CrossBool(CrossType):
@@ -90,6 +118,9 @@ class CrossBool(CrossType):
     def getTSType(self) -> Tuple[str, bool]:
         return "boolean", True
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        return "bool", "boolean", True
+
 
 class CrossNull(CrossType):
     def __init__(self) -> None:
@@ -100,6 +131,9 @@ class CrossNull(CrossType):
 
     def getTSType(self) -> Tuple[str, bool]:
         return "null", False
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        return None, "null", True
 
 
 class CrossLiteral(CrossType):
@@ -128,6 +162,24 @@ class CrossLiteral(CrossType):
         inner = map(repr, self._variants)
         return f"typing_extensions.Literal[{', '.join(inner)}]", False
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        # PHP doesn't have support for literals, so we just use vanilla types
+        subtypes = set()
+        for v in self._variants:
+            if isinstance(v, str):
+                subtypes.add('string')
+            elif isinstance(v, int):
+                subtypes.add('int')
+            else:
+                assert isinstance(v, bool)
+                subtypes.add('bool')
+        subtypes2 = list(sorted(subtypes))
+        assert len(subtypes2)
+        if len(subtypes2) == 1:
+            return subtypes2[0], subtypes2[0], True
+
+        return 'mixed', '|'.join(subtypes2), False
+
 
 class CrossOmit(CrossType):
     """Represents the Type of an argument when it is omitted."""
@@ -143,6 +195,9 @@ class CrossOmit(CrossType):
     def getTSType(self) -> Tuple[str, bool]:
         return "undefined", False
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        raise Exception("CrossOmit is not supported by PHP")
+
 
 class CrossNewType(CrossType):
     def __init__(self, typename: str, *, quoted: bool = False) -> None:
@@ -156,6 +211,10 @@ class CrossNewType(CrossType):
 
     def getTSType(self) -> Tuple[str, bool]:
         return self._typename, True
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        # TODO: do we need to do something about namespaces here?
+        return self._typename, self._typename, True
 
 
 class CrossOptional(CrossType):
@@ -175,6 +234,10 @@ class CrossOptional(CrossType):
     def getPyType(self) -> Tuple[str, bool]:
         innertype, innerquote = self._inner.getPyType()
         return f"typing.Optional[{innertype}]", innerquote
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        innertype = self._inner.getPHPTypes()[1]
+        return None, 'null|' + innertype, False
 
 
 class CrossList(CrossType):
@@ -201,6 +264,10 @@ class CrossList(CrossType):
     def getPyType(self) -> Tuple[str, bool]:
         innertype, innerquote = self._wrapped.getPyType()
         return f"typing.List[{innertype}]", innerquote
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        _, innertype, canbearray = self._wrapped.getPHPTypes()
+        return 'array', innertype + '[]' if canbearray else 'mixed', False
 
 
 class CrossSet(CrossType):
@@ -252,6 +319,10 @@ class CrossDict(CrossType):
         valtype, valquote = self._val.getPyType()
         return f"typing.{self._pythondicttype}[{keytype}, {valtype}]", keyquote or valquote
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        _, innertype, canbearray = self._val.getPHPTypes()
+        return 'array', innertype + '[]' if canbearray else 'mixed', False
+
 
 class CrossMap(CrossDict):
     _pythondicttype = "Mapping"
@@ -291,6 +362,13 @@ class CrossUnion(CrossType):
                 quote = True
         return f"typing.Union[{', '.join(inner)}]", quote
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        inner = [
+            t.getPHPTypes()[1]
+            for t in self._inner
+        ]
+        return None, '|'.join(inner), False
+
 
 class CrossCallable(CrossType):
     def __init__(self, args: List[CrossType], ret: CrossType) -> None:
@@ -320,6 +398,9 @@ class CrossCallable(CrossType):
                 quote = True
         rettype, retquote = self._ret.getPyType()
         return f"typing.Callable[[{', '.join(argtypes)}], {rettype}]", quote or retquote
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        return None, 'callable', True
 
 
 class CrossPythonOnlyType(CrossType):
