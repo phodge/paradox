@@ -19,6 +19,7 @@ except ImportError:
 
 ImportSpecPy = Tuple[str, Optional[List[str]]]
 ImportSpecTS = Tuple[str, Optional[List[str]]]
+ImportSpecPHP = Tuple[str, Optional[str]]
 
 
 class NoDefault:
@@ -48,6 +49,9 @@ class Statement(abc.ABC):
 
     @abc.abstractmethod
     def getImportsTS(self) -> Iterable[ImportSpecTS]: ...
+
+    @abc.abstractmethod
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]: ...
 
     def getTypesPy(self) -> Iterable[Tuple[str, CrossType]]:
         """Yield tuples of <type name> <base type name>
@@ -79,12 +83,14 @@ class Statements(Statement):
     _statements: List[Statement]
     _importspy: List[ImportSpecPy]
     _importsts: List[ImportSpecTS]
+    _importsphp: List[ImportSpecPHP]
 
     def __init__(self) -> None:
         super().__init__()
         self._statements = []
         self._importspy = []
         self._importsts = []
+        self._importsphp = []
 
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
         yield from self._importspy
@@ -95,6 +101,11 @@ class Statements(Statement):
         yield from self._importsts
         for stmt in self._statements:
             yield from stmt.getImportsTS()
+
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
+        yield from self._importsphp
+        for stmt in self._statements:
+            yield from stmt.getImportsPHP()
 
     def blank(self) -> None:
         self._statements.append(BlankLine())
@@ -216,6 +227,9 @@ class StatementWithNoImports(Statement):
         return z
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
+        return []
+
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
         return []
 
 
@@ -951,6 +965,7 @@ class ClassProperty:
 class ClassSpec(Statement):
     _importspy: List[ImportSpecPy]
     _importsts: List[ImportSpecTS]
+    _importsphp: List[ImportSpecPHP]
 
     def __init__(
         self,
@@ -984,6 +999,7 @@ class ClassSpec(Statement):
 
         self._importspy = []
         self._importsts = []
+        self._importsphp = []
 
         if appendto:
             appendto.also(self)
@@ -1110,6 +1126,15 @@ class ClassSpec(Statement):
             yield from constructor.getImportsTS()
         for method in self._methods:
             yield from method.getImportsTS()
+
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
+        yield from self._importsphp
+
+        constructor = self._getInitSpec("php")
+        if constructor:
+            yield from constructor.getImportsPHP()
+        for method in self._methods:
+            yield from method.getImportsPHP()
 
     def remark(self, comment: str) -> None:
         self._remarks.append(comment)
