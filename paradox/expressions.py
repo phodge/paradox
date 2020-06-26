@@ -170,6 +170,36 @@ class PanLiteral(PanExpr):
         return self._val
 
 
+class PanIsType(PanExpr):
+    def __init__(
+        self,
+        expr: PanExpr,
+        expected: Literal["str", "int", "bool", "list"],
+    ) -> None:
+        self._expr = expr
+        self._expected = expected
+
+    def getPanType(self) -> CrossBool:
+        return CrossBool()
+
+    def getPyExpr(self) -> Tuple[str, PyPrecedence]:
+        raise Exception("TODO: finish this")  # noqa
+
+    def getTSExpr(self) -> Tuple[str, TSPrecedence]:
+        raise Exception("TODO: finish this")  # noqa
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        functions = {
+            'str':  'is_string',
+            'int':  'is_int',
+            'bool': 'is_bool',
+            'list': 'is_array',
+        }
+
+        code = functions[self._expected] + '(' + self._expr.getPHPExpr()[0] + ')'
+        return code, PHPPrecedence.Arrow
+
+
 class PanOmit(PanExpr):
     def getPanType(self) -> CrossType:
         return CrossOmit()
@@ -811,3 +841,19 @@ def exacteq_(arg1: Pannable, arg2: Pannable) -> PanCompare:
 
 def isnull(arg: Pannable) -> PanExpr:
     return PanIsNullExpr(pan(arg))
+
+
+def isbool(arg: Pannable) -> PanExpr:
+    return PanIsType(pan(arg), 'bool')
+
+
+def isint(arg: Pannable) -> PanExpr:
+    return PanIsType(pan(arg), 'int')
+
+
+def isstr(arg: Pannable) -> PanExpr:
+    return PanIsType(pan(arg), 'str')
+
+
+def islist(arg: Pannable) -> PanExpr:
+    return PanIsType(pan(arg), 'list')
