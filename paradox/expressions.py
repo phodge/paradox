@@ -3,10 +3,13 @@ import enum
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
-from typing_extensions import Literal
-
 from paradox.typing import (CrossBool, CrossDict, CrossList, CrossNull, CrossNum, CrossOmit,
                             CrossStr, CrossType, FlexiType, unflex)
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal  # type: ignore
 
 if TYPE_CHECKING:
     # XXX: flake8 doesn't realise we're using ellipsis below

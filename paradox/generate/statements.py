@@ -2,16 +2,20 @@ import abc
 import builtins
 import itertools
 from contextlib import contextmanager
-from dataclasses import dataclass
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
-from typing_extensions import Literal
-
-from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess, PanLiteral, Pannable,
-                                 PanOmit, PanProp, PanVar, pan, pannotomit, pyexpr)
+from dataclasses import dataclass
+from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
+                                 PanLiteral, Pannable, PanOmit, PanProp,
+                                 PanVar, pan, pannotomit, pyexpr)
 from paradox.generate.files import FileWriter
-from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType, FlexiType, maybe, omittable,
-                            unflex)
+from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
+                            FlexiType, maybe, omittable, unflex)
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal  # type: ignore
 
 ImportSpecPy = Tuple[str, Optional[List[str]]]
 ImportSpecTS = Tuple[str, Optional[List[str]]]
