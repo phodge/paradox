@@ -78,6 +78,9 @@ class Statement(abc.ABC):
     @abc.abstractmethod
     def writets(self, w: FileWriter) -> None: ...
 
+    @abc.abstractmethod
+    def writephp(self, w: FileWriter) -> None: ...
+
 
 class Statements(Statement):
     _statements: List[Statement]
@@ -220,6 +223,10 @@ class Statements(Statement):
         for stmt in self._statements:
             stmt.writets(w)
 
+    def writephp(self, w: FileWriter) -> None:
+        for stmt in self._statements:
+            stmt.writephp(w)
+
 
 class StatementWithNoImports(Statement):
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
@@ -245,12 +252,18 @@ class Comment(StatementWithNoImports):
     def writets(self, w: FileWriter) -> None:
         w.line0('// ' + self._text)
 
+    def writephp(self, w: FileWriter) -> None:
+        w.line0('// ' + self._text)
+
 
 class BlankLine(StatementWithNoImports):
     def writepy(self, w: FileWriter) -> None:
         w.blank()
 
     def writets(self, w: FileWriter) -> None:
+        w.blank()
+
+    def writephp(self, w: FileWriter) -> None:
         w.blank()
 
 
@@ -265,6 +278,9 @@ class PanExprStatement(StatementWithNoImports):
 
     def writepy(self, w: FileWriter) -> None:
         w.line0(self._expr.getPyExpr()[0])
+
+    def writephp(self, w: FileWriter) -> None:
+        w.line0(self._expr.getPHPExpr()[0] + ';')
 
 
 class HardCodedStatement(StatementWithNoImports):
@@ -302,6 +318,9 @@ class RawTypescript(StatementWithNoImports):
     def writepy(self, w: FileWriter) -> None:
         raise Exception("Not implemented in Python")
 
+    def writephp(self, w: FileWriter) -> None:
+        raise Exception("Not implemented in PHP")
+
 
 class SimpleRaise(StatementWithNoImports):
     _ctor: Optional[str]
@@ -335,6 +354,17 @@ class SimpleRaise(StatementWithNoImports):
             line = f"throw new Error({self._msg!r})"
         w.line0(line)
 
+    def writephp(self, w: FileWriter) -> None:
+        ctor = self._ctor or '\\Exception'
+        if self._msg is None:
+            assert self._expr is not None
+            line = f"throw new {ctor}({self._expr.getPHPExpr()[0]})"
+        else:
+            # TODO: don't import this here
+            from paradox.expressions import _phpstr
+            line = f"throw new {ctor}({_phpstr(self._msg)})"
+        w.line0(line)
+
 
 class ConditionalBlock(Statements):
     _expr: PanExpr
@@ -357,6 +387,15 @@ class ConditionalBlock(Statements):
         w.line0(f'if ({self._expr.getTSExpr()[0]}) {{')
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
+        w.line0('}')
+
+        # always put a blank line after a conditional
+        w.blank()
+
+    def writephp(self, w: FileWriter) -> None:
+        w.line0(f'if ({self._expr.getPHPExpr()[0]}) {{')
+        for stmt in self._statements:
+            stmt.writephp(w.with_more_indent())
         w.line0('}')
 
         # always put a blank line after a conditional
@@ -549,6 +588,12 @@ class ReturnStatement(StatementWithNoImports):
         else:
             w.line0('return ' + self._expr.getTSExpr()[0] + ';')
 
+    def writephp(self, w: FileWriter) -> None:
+        if isinstance(self._expr, PanOmit):
+            w.line0('return;')
+        else:
+            w.line0('return ' + self._expr.getPHPExpr()[0] + ';')
+
 
 class AssignmentStatement(StatementWithNoImports):
     def __init__(
@@ -589,6 +634,17 @@ class AssignmentStatement(StatementWithNoImports):
         else:
             w.line0(f'{left} = {self._expr.getTSExpr()[0]};')
 
+    def writephp(self, w: FileWriter) -> None:
+        phptypes = self._target.getPanType().getPHPTypes()
+        if self._declare and self._declaretype:
+            w.line0(f"/** @var {phptypes[1]} */")
+
+        left = self._target.getPHPExpr()[0]
+
+        # you can't just make a variable declaration in PHP
+        assert self._expr is not None
+        w.line0(f'{left} = {self._expr.getPHPExpr()[0]};')
+
 
 class DictBuilderStatement(Statement):
     _var: PanVar
@@ -619,6 +675,9 @@ class DictBuilderStatement(Statement):
         yield 'typing', None
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
+        return []
+
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
         return []
 
     def addPair(self, key: str, allowomit: bool) -> None:
@@ -660,6 +719,28 @@ class DictBuilderStatement(Statement):
                 w.line0(f'if (typeof {k} !== "undefined") {{')
                 w.line1(f'{varstr}[{k!r}] = {k};')
                 w.line0(f'}}')
+
+    def writephp(self, w: FileWriter) -> None:
+        # TODO: don't import this here
+        from paradox.expressions import _phpstr
+
+        phptype = self._type.getPHPTypes()[0]
+        if phptype:
+            w.line0(f'/** @var {phptype} */')
+
+        inner = ', '.join([
+            _phpstr(k) + ' => $' + k
+            for k, allowomit in self._keys
+            if not allowomit
+        ])
+
+        varstr = self._var.getPHPExpr()[0]
+
+        w.line0(f'{varstr} = [{inner}];')
+
+        # now do the omittable args
+        for k, allowomit in self._keys:
+            raise Exception("omittable args aren't supported by PHP")
 
 
 class FunctionSpec(Statements):
@@ -920,6 +1001,59 @@ class FunctionSpec(Statements):
             w.line0(f"): {rettype} {{" if rettype else ") {")
             for stmt in self._statements:
                 stmt.writets(w.with_more_indent())
+            w.line0('}')
+
+    def writephp(self, w: FileWriter) -> None:
+        modifiers: List[str] = []
+
+        assert not self._isasync, "Async methods not possible for PHP"
+
+        if self._isabstract:
+            modifiers.append('abstract')
+
+        if self._isstaticmethod:
+            modifiers.append('static')
+
+        # first write out overloads
+        assert not len(self._overloads), "Overloads not possible in PHP"
+
+        if self._ismethod:
+            modifiers.append('public')
+
+        name = '__construct' if self._isconstructor else self._name
+        w.line0((' '.join(modifiers)) + ' function ' + name + "(")
+
+        assert not len(self._kwargs), "PHP does not support kwargs"
+
+        # header
+        argnum = 0
+        comma = ','
+        for argname, crosstype, argdefault in self._pargs:
+            argnum += 1
+            if argnum == len(self._pargs):
+                comma = ''
+            argstr = '$' + argname
+            phptype = crosstype.getPHPTypes()[0]
+            if phptype:
+                argstr = phptype + ' ' + argstr
+            if argdefault is not None:
+                argstr += ' = ' + argdefault.getPHPExpr()[0]
+            w.line1(argstr + comma)
+
+        rettype: str = ""
+        if not self._isconstructor and self._rettype is not None:
+            rettype = self._rettype.getPHPTypes()[0] or ""
+
+        if rettype:
+            rettype = ": " + rettype
+
+        if self._isabstract:
+            assert not len(self._statements)
+            w.line0(f"){rettype};")
+        else:
+            w.line0(f"){rettype} {{")
+            for stmt in self._statements:
+                stmt.writephp(w.with_more_indent())
             w.line0('}')
 
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
@@ -1247,6 +1381,62 @@ class ClassSpec(Statement):
         for comment in self._remarks:
             w.line1('// ' + comment)
             w.blank()
+
+        w.line0("}")
+
+    def writephp(self, w: FileWriter) -> None:
+        prefix = ''
+
+        if self._isabstract:
+            prefix += 'abstract '
+
+        if self._docstring:
+            w.line0('/**')
+            for docline in self._docstring:
+                w.line0(' * ' + docline.strip())
+            w.line0(' */')
+
+        extends = ''
+        if len(self._bases):
+            assert len(self._bases) <= 1
+            extends = ' extends ' + self._bases[0]
+
+        w.line0(f"{prefix}class {self._name}{extends} {{")
+
+        needemptyline = False
+
+        # first write out properties
+        for prop in self._properties:
+            assign = ''
+
+            # only assign values in the class body if the value is a literal
+            if prop.propdefault and isinstance(prop.propdefault, PanLiteral):
+                assign = ' = ' + prop.propdefault.getPHPExpr()[0]
+
+            phptypes = prop.proptype.getPHPTypes()
+            w.line1(f'/** @var {phptypes[1]} */')
+            w.line1(f'public ${prop.propname}{assign};')
+            needemptyline = True
+
+        # add an __init__() method to set default values
+        constructor = self._getInitSpec("php")
+        if constructor:
+            if needemptyline:
+                w.blank()
+            constructor.writephp(w.with_more_indent())
+            needemptyline = True
+
+        # all other methods
+        for method in self._methods:
+            if needemptyline:
+                w.blank()
+            method.writephp(w.with_more_indent())
+            needemptyline = True
+
+        if needemptyline:
+            for comment in self._remarks:
+                w.line1('// ' + comment)
+                w.blank()
 
         w.line0("}")
 
