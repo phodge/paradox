@@ -7,7 +7,8 @@ from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
                                  PanLiteral, Pannable, PanOmit, PanProp,
-                                 PanVar, pan, pannotomit, pyexpr)
+                                 PanVar, PHPPrecedence, pan, pannotomit,
+                                 pyexpr)
 from paradox.generate.files import FileWriter
 from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
@@ -135,6 +136,10 @@ class Statements(Statement):
     # shortcut to appending a ReturnStatement
     def alsoReturn(self, expr: Pannable) -> None:
         self._statements.append(ReturnStatement(pan(expr)))
+
+    # shortcut to adding a statement that does list.append()
+    def alsoAppend(self, list_: Pannable, value: Pannable) -> None:
+        self._statements.append(ListAppendStatement(pan(list_), pan(value)))
 
     def alsoRaise(
         self,
@@ -604,6 +609,26 @@ class ReturnStatement(StatementWithNoImports):
             w.line0('return;')
         else:
             w.line0('return ' + self._expr.getPHPExpr()[0] + ';')
+
+
+class ListAppendStatement(StatementWithNoImports):
+    def __init__(self, list_: PanExpr, value: PanExpr) -> None:
+        super().__init__()
+
+        self._list: PanExpr = list_
+        self._value: PanExpr = value
+
+    def writepy(self, w: FileWriter) -> None:
+        raise Exception("TODO: finish python code")  # noqa
+
+    def writets(self, w: FileWriter) -> None:
+        raise Exception("TODO: finish TS code")  # noqa
+
+    def writephp(self, w: FileWriter) -> None:
+        list_, prec = self._list.getPHPExpr()
+        if prec.value >= PHPPrecedence.Arrow.value:
+            list_ = '(' + list_ + ')'
+        w.line0(list_ + '[] = ' + self._value.getPHPExpr()[0] + ';')
 
 
 class AssignmentStatement(StatementWithNoImports):
