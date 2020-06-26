@@ -2,8 +2,7 @@ import abc
 import subprocess
 from collections import defaultdict
 from pathlib import Path
-from typing import IO
-from typing import Dict, List, Optional, Set
+from typing import IO, Dict, List, Optional, Set
 
 
 class FileWriter:

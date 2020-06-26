@@ -1,10 +1,12 @@
 import abc
 import enum
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Iterable, List, Mapping, Optional, Tuple, Union
+from typing import (TYPE_CHECKING, Dict, Iterable, List, Mapping, Optional,
+                    Tuple, Union)
 
-from paradox.typing import (CrossBool, CrossDict, CrossList, CrossNull, CrossNum, CrossOmit,
-                            CrossStr, CrossType, FlexiType, unflex)
+from paradox.typing import (CrossBool, CrossDict, CrossList, CrossNull,
+                            CrossNum, CrossOmit, CrossStr, CrossType,
+                            FlexiType, unflex)
 
 try:
     from typing import Literal
