@@ -801,6 +801,7 @@ class FunctionSpec(Statements):
         ismethod: bool = False,
         isstaticmethod: bool = False,
         isasync: bool = False,
+        docstring: List[str] = None,
     ) -> None:
         super().__init__()
 
@@ -830,6 +831,8 @@ class FunctionSpec(Statements):
         self._ismethod: bool = ismethod
         self._isstaticmethod: bool = isstaticmethod
         self._isasync: bool = isasync
+        # TODO: add support for this in PHP/Typescript also
+        self._docstring: Optional[List[str]] = docstring
 
     def addDecoratorPy(self, decoration: str) -> None:
         self._decorators_py.append(decoration)
@@ -975,6 +978,13 @@ class FunctionSpec(Statements):
             w.line0(f') -> None:')
         else:
             w.line0(f') -> {self._rettype.getQuotedPyType()}:')
+
+        if self._docstring:
+            w.line1('"""')
+            for docline in self._docstring:
+                w.line1(docline.strip())
+            w.line1('"""')
+            havebody = True
 
         havebody = False
 
@@ -1186,6 +1196,7 @@ class ClassSpec(Statement):
         isabstract: bool = False,
         isstaticmethod: bool = False,
         isasync: bool = False,
+        docstring: List[str] = None,
     ) -> FunctionSpec:
         spec = FunctionSpec(
             name,
@@ -1194,6 +1205,7 @@ class ClassSpec(Statement):
             ismethod=True,
             isstaticmethod=isstaticmethod,
             isasync=isasync,
+            docstring=docstring,
         )
         self._methods.append(spec)
         return spec
