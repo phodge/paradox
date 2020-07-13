@@ -374,11 +374,11 @@ class SimpleRaise(StatementWithNoImports):
         ctor = self._ctor or '\\Exception'
         if self._msg is None:
             assert self._expr is not None
-            line = f"throw new {ctor}({self._expr.getPHPExpr()[0]})"
+            line = f"throw new {ctor}({self._expr.getPHPExpr()[0]});"
         else:
             # TODO: don't import this here
             from paradox.expressions import _phpstr
-            line = f"throw new {ctor}({_phpstr(self._msg)})"
+            line = f"throw new {ctor}({_phpstr(self._msg)});"
         w.line0(line)
 
 
