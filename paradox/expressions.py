@@ -392,8 +392,8 @@ class PanVar(PanExpr):
         assert isinstance(self._type, CrossDict)
         return PanKeyAccess(self, idx)
 
-    def getprop(self, propname: str, type: CrossType) -> "PanProp":
-        return PanProp(propname, type, self)
+    def getprop(self, propname: str, type: FlexiType) -> "PanProp":
+        return PanProp(propname, unflex(type), self)
 
 
 class PanProp(PanVar):
