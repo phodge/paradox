@@ -532,6 +532,15 @@ class PanStringBuilder(PanExpr):
         expr += "`"
         return expr, TSPrecedence.Literal
 
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        parts = []
+        for p in self._parts:
+            if isinstance(p, PanLiteral) and p.isstr():
+                parts.append(_phpstr(p.getRawStr()))
+            else:
+                parts.append(_wrapmult(p.getPHPExpr()))
+        return " . ".join(parts), PHPPrecedence.MultDiv
+
 
 class PanTSOnly(PanExpr):
     def __init__(self, code: str, precedence: TSPrecedence = TSPrecedence.MultDiv) -> None:
