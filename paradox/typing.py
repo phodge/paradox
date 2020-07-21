@@ -290,6 +290,9 @@ class CrossSet(CrossType):
         innertype, innerquote = self._wrapped.getPyType()
         return f"typing.Set[{innertype}]", innerquote
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        raise NotImplementedError("PHP has no Set type")
+
 
 class CrossDict(CrossType):
     _pythondicttype = "Dict"
@@ -417,6 +420,9 @@ class CrossPythonOnlyType(CrossType):
 
     def getTSType(self) -> Tuple[str, bool]:
         raise Exception("CrossPythonOnlyType has no TS equivalent")
+
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        raise Exception("CrossPythonOnlyType has no PHP equivalent")
 
     def getPyType(self) -> Tuple[str, bool]:
         return self._typeexpr, self._quotetype
