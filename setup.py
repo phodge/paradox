@@ -8,8 +8,13 @@ def _read_pyproject() -> Dict[str, Any]:
 
     import pytoml
 
-    with open(join(dirname(__file__), 'pyproject.toml')) as f:
-        pyproject = pytoml.load(f)
+    try:
+        with open(join(dirname(__file__), 'pyproject.toml')) as f:
+            pyproject = pytoml.load(f)
+    except FileNotFoundError:
+        # it looks like setuptools renames the file while it's working ... what a dirty hack job
+        with open(join(dirname(__file__), 'pyproject.tmp')) as f:
+            pyproject = pytoml.load(f)
 
     try:
         return pyproject['tool']['poetry']
