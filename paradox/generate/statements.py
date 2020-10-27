@@ -14,7 +14,7 @@ from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
 
 try:
-    from typing import Literal
+    from typing import Literal  # type: ignore
 except ImportError:
     from typing_extensions import Literal  # type: ignore
 
@@ -802,6 +802,7 @@ class FunctionSpec(Statements):
         isstaticmethod: bool = False,
         isasync: bool = False,
         docstring: List[str] = None,
+        phpprotected: bool = False,
     ) -> None:
         super().__init__()
 
@@ -833,6 +834,8 @@ class FunctionSpec(Statements):
         self._isasync: bool = isasync
         # TODO: add support for this in PHP/Typescript also
         self._docstring: Optional[List[str]] = docstring
+        # TODO: we need to actually do something with this
+        self._phpprotected: bool = phpprotected
 
     def addDecoratorPy(self, decoration: str) -> None:
         self._decorators_py.append(decoration)
@@ -1197,6 +1200,7 @@ class ClassSpec(Statement):
         isstaticmethod: bool = False,
         isasync: bool = False,
         docstring: List[str] = None,
+        phpprotected: bool = False,
     ) -> FunctionSpec:
         spec = FunctionSpec(
             name,
@@ -1206,6 +1210,7 @@ class ClassSpec(Statement):
             isstaticmethod=isstaticmethod,
             isasync=isasync,
             docstring=docstring,
+            phpprotected=phpprotected,
         )
         self._methods.append(spec)
         return spec
