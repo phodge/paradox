@@ -1,9 +1,7 @@
-from typing import Any, Dict
-
 from setuptools import setup
 
 
-def _read_pyproject() -> Dict[str, Any]:
+def _read_pyproject():
     from os.path import dirname, join
 
     import pytoml
