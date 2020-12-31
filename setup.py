@@ -20,16 +20,26 @@ def _read_pyproject():
         raise Exception("pyproject.toml is missing [tool.poetry] section")
 
 
+def _get_packages_recursive(poetry):
+    from glob import glob
+    from os.path import dirname
+
+    for entry in poetry['packages']:
+        subdir = entry['include']
+        yield subdir
+
+        # look for subdirectories
+        for initpy in glob(subdir + '/**/__init__.py'):
+            yield dirname(initpy)
+
+
 poetry = _read_pyproject()
 
 setup(
     name=poetry['name'],
     version=poetry['version'],
     description=poetry['description'],
-    packages=[
-        entry['include']
-        for entry in poetry['packages']
-    ],
+    packages=list(_get_packages_recursive(poetry)),
     # TODO: how about dependencies?
     install_requires=[
         packagename
