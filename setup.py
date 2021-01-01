@@ -40,7 +40,7 @@ setup(
     version=poetry['version'],
     description=poetry['description'],
     packages=list(_get_packages_recursive(poetry)),
-    package_data={poetry['name']: ['py.typed']},
+    package_data={'paradox': ['py.typed', '**/py.typed']},
     include_package_data=True,
     # TODO: how about dependencies?
     install_requires=[
