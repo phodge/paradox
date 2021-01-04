@@ -1,0 +1,7 @@
+[flake8]
+max_line_length = 99
+
+per-file-ignores =
+	# we have many sequential lines using f-strings for consistency but not
+	# all of them use placeholders
+	paradox/generate/statements.py: F541
