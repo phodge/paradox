@@ -2,9 +2,9 @@ import abc
 import builtins
 import itertools
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
-from dataclasses import dataclass
 from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
                                  PanLiteral, Pannable, PanOmit, PanProp,
                                  PanVar, PHPPrecedence, pan, pannotomit,
