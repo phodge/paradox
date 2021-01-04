@@ -15,6 +15,7 @@ typing-extensions = {version = "^3.7.4", python = "<3.8"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"
+flake8 = "^3.8.4"
 
 [build-system]
 requires = ["setuptools>=40.0", "wheel", "pytoml"]
