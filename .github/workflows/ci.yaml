@@ -11,5 +11,5 @@ jobs:
               with:
                 python-version: 3.8
             - run: python -m pip install poetry
-            - run: poetry install --dev
+            - run: poetry install
             - run: flake8 setup.py paradox
