@@ -14,9 +14,15 @@ from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
 
 try:
-    from typing import Literal
+    # typing_extensions is only installed on python < 3.8
+    # Note that typing_extensions will import Literal from typing module if possible, so if
+    # typing.Literal exists, it will be used
+    from typing_extensions import Literal
 except ImportError:
-    from typing_extensions import Literal  # type: ignore
+    # on python 3.8 and newer, when typing_extensions isn't available, we can just import
+    # typing.Literal directly.
+    from typing import Literal  # type: ignore
+
 
 ImportSpecPy = Tuple[str, Optional[List[str]]]
 ImportSpecTS = Tuple[str, Optional[List[str]]]
