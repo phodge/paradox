@@ -392,7 +392,12 @@ class CrossCallable(CrossType):
             yield from arg.getPyImports()
 
     def getTSType(self) -> Tuple[str, bool]:
-        chars = 'abcdefghijklmnopqrstuvwxyz'
+        # obviously we only support up to 52 arguments
+        chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        if len(self._args) > len(chars):
+            raise Exception(
+                f"CrossCallable() implementation does not support more than {len(chars)} arguments"
+            )
         argtypes = [f"{chars[i]}: {t.getTSType()[0]}" for i, t in enumerate(self._args)]
         return f"({', '.join(argtypes)}) => {self._ret.getTSType()[0]}", False
 
