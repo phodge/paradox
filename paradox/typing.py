@@ -333,6 +333,9 @@ class CrossMap(CrossDict):
     def getTSType(self) -> Tuple[str, bool]:
         return f"Map<{self._key.getTSType()[0]}, {self._val.getTSType()[0]}>", False
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        return 'Ds\\Map', 'Ds\\Map', True
+
 
 class CrossUnion(CrossType):
     def __init__(self, innertypes: List[CrossType]) -> None:
