@@ -1526,6 +1526,9 @@ class InterfaceSpec(Statement):
             raise Exception("TODO: get imports from property types")  # noqa
             yield from crosstype.getImportsPy()
 
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
+        raise NotImplementedError("TODO: not implemented")
+
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         for name, crosstype in self._properties:
             # TODO: get imports from crosstype
@@ -1542,3 +1545,6 @@ class InterfaceSpec(Statement):
         for propname, proptype in self._properties:
             w.line1(f"{propname}: {proptype.getTSType()[0]};")
         w.line0(f"}}")
+
+    def writephp(self, w: FileWriter) -> None:
+        raise NotImplementedError("TODO: not implemented")

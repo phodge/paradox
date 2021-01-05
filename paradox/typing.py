@@ -443,6 +443,9 @@ class CrossTypeScriptOnlyType(CrossType):
     def getPyType(self) -> Tuple[str, bool]:
         raise NotImplementedError("CrossTypeScriptOnlyType has no Python equivalent")
 
+    def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
+        raise NotImplementedError("CrossTypeScriptOnlyType has no PHP equivalent")
+
 
 FlexiType = Union[CrossType, Type[str], Type[int], Type[bool]]
 
