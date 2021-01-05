@@ -237,6 +237,8 @@ class CrossOptional(CrossType):
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
         innertype = self._inner.getPHPTypes()[1]
+
+        # IIRC we have to put the null variant first to satisfy some php linters and/or formatters
         return None, 'null|' + innertype, False
 
 
