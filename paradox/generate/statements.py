@@ -1534,7 +1534,7 @@ class InterfaceSpec(Statement):
         return []
 
     def writepy(self, w: FileWriter) -> None:
-        raise Exception("InterfaceSpec can't generate python code")  # noqa
+        raise NotImplementedError("InterfaceSpec can't generate python code")  # noqa
 
     def writets(self, w: FileWriter) -> None:
         export = 'export ' if self._tsexport else ''

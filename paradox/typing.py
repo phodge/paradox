@@ -196,7 +196,7 @@ class CrossOmit(CrossType):
         return "undefined", False
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
-        raise Exception("CrossOmit is not supported by PHP")
+        raise NotImplementedError("CrossOmit is not supported by PHP")
 
 
 class CrossNewType(CrossType):
@@ -419,10 +419,10 @@ class CrossPythonOnlyType(CrossType):
         self._quotetype = quotetype
 
     def getTSType(self) -> Tuple[str, bool]:
-        raise Exception("CrossPythonOnlyType has no TS equivalent")
+        raise NotImplementedError("CrossPythonOnlyType has no TS equivalent")
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
-        raise Exception("CrossPythonOnlyType has no PHP equivalent")
+        raise NotImplementedError("CrossPythonOnlyType has no PHP equivalent")
 
     def getPyType(self) -> Tuple[str, bool]:
         return self._typeexpr, self._quotetype
@@ -438,7 +438,7 @@ class CrossTypeScriptOnlyType(CrossType):
         return self._typeexpr, False
 
     def getPyType(self) -> Tuple[str, bool]:
-        raise Exception("CrossTypeScriptOnlyType has no Python equivalent")
+        raise NotImplementedError("CrossTypeScriptOnlyType has no Python equivalent")
 
 
 FlexiType = Union[CrossType, Type[str], Type[int], Type[bool]]
