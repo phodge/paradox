@@ -1128,6 +1128,9 @@ class FunctionSpec(Statements):
                 else:
                     yield module, None
 
+        for overload in self._overloads:
+            yield from overload.getImportsPy()
+
         # XXX: also need types out of the arg types / return types
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
@@ -1135,6 +1138,9 @@ class FunctionSpec(Statements):
 
         for stmt in self._statements:
             yield from stmt.getImportsTS()
+
+        for overload in self._overloads:
+            yield from overload.getImportsTS()
 
         # XXX: also need types out of the arg types / return types
 
