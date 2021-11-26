@@ -7,7 +7,7 @@ authors = []
 packages = [
     { include = "paradox" }
 ]
-# make sure py.typed files are included when installing via poetry (seutp.py does this differently)
+# make sure py.typed files are included when installing via poetry (setup.py does this differently)
 include = ["py.typed"]
 
 [tool.poetry.dependencies]
