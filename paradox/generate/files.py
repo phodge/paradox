@@ -107,10 +107,13 @@ class FileTS(FileSpec):
 
             # next, write out imports
             for module, names2 in imports_by_module.items():
-                if None in names2:
-                    f.write(f"import '{module}';\n")
-                    names2.remove(None)
-                for name in sorted(names2):
+                strnames = set()
+                for name in names2:
+                    if name is None:
+                        f.write(f"import '{module}';\n")
+                    else:
+                        strnames.add(name)
+                for name in sorted(strnames):
                     f.write(f"import {{{name}}} from '{module}';\n")
             if len(imports_by_module):
                 f.write("\n")
