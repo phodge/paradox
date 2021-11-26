@@ -27,6 +27,7 @@ def main() -> None:
     assert branch == "master", f"Incorrect branch {branch!r}"
 
     # update pyproject.toml
+    sys.stderr.write("Updating version inside pyproject.toml ...\n")
     pyproject = HERE / 'pyproject.toml'
     tmpfile = HERE / 'pyproject.toml.new'
     with pyproject.open() as f_in, tmpfile.open('w') as f_out:
@@ -36,9 +37,8 @@ def main() -> None:
             else:
                 f_out.write(line)
     tmpfile.replace(pyproject)
-
-    sys.stderr.write("Updating version inside pyproject.toml ...\n")
     runhere(['git', 'add', 'pyproject.toml'], check=True)
+
     runhere(['git', 'commit', '-m', 'Updated version in pyproject.toml'], check=True)
     sys.stderr.write(f"Tagging {tagname!r} ...\n")
     runhere(['git', 'tag', tagname], check=True)
