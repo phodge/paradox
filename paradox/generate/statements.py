@@ -496,7 +496,7 @@ class TryCatchBlock(Statements):
     @contextmanager
     def withCatchBlock2(
         self,
-        var: PanVar,
+        var: PanVar = None,
         pyclass: str = None,
         tsclass: str = None,
     ) -> Iterator[CatchBlock2]:
