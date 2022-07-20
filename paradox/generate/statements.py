@@ -453,7 +453,7 @@ class CatchBlock2(Statements):
     def __init__(self, var: PanVar = None, *, pyclass: str = None, tsclass: str = None) -> None:
         super().__init__()
 
-        self._var: PanVar = var
+        self._var = var
         self._pyclass = pyclass
         self._tsclass = tsclass
 
