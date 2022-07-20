@@ -450,7 +450,13 @@ class CatchBlock(Statements):
 class CatchBlock2(Statements):
     _var: Optional[PanVar]
 
-    def __init__(self, var: PanVar = None, *, pyclass: str = None, tsclass: str = None) -> None:
+    def __init__(
+        self,
+        var: PanVar = None,
+        *,
+        pyclass: str = None,
+        tsclass: str = None,
+    ) -> None:
         super().__init__()
 
         self._var = var
