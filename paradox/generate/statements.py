@@ -445,6 +445,17 @@ class CatchBlock(Statements):
     def writets(self, w: FileWriter) -> None:
         raise Exception("TODO: CatchBlock (original) doesn't do typescript")  # noqa
 
+    def writephp(self, w: FileWriter) -> None:
+        if not self.catchexpr:
+            raise Exception('CatchBlock cannot be turned to PHP without a catchexpr')
+
+        intro = '} catch (' + self.catchexpr
+        intro += ' $' + (self.catchvar or '_')
+        intro += ') {'
+        w.line0(intro)
+        for stmt in self._statements:
+            stmt.writephp(w.with_more_indent())
+
 
 # TODO: get rid of the old CatchBlock
 class CatchBlock2(Statements):
@@ -456,12 +467,14 @@ class CatchBlock2(Statements):
         *,
         pyclass: str = None,
         tsclass: str = None,
+        phpclass: str = None,
     ) -> None:
         super().__init__()
 
         self._var = var
         self._pyclass = pyclass
         self._tsclass = tsclass
+        self._phpclass = phpclass
 
     def writepy(self, w: FileWriter) -> None:
         # XXX: remember that for Python you almost certainly don't want a bare "except:" as that
@@ -479,6 +492,17 @@ class CatchBlock2(Statements):
 
     def writets(self, w: FileWriter) -> None:
         raise Exception("TODO: CatchBlock2 is not directly written")  # noqa
+
+    def writephp(self, w: FileWriter) -> None:
+        if not self._phpclass:
+            raise Exception('CatchBlock2 cannot be turned to PHP without a phpclass')
+
+        intro = '} catch (' + self._phpclass
+        intro += ' $' + (self._var.rawname if self._var else '_')
+        intro += ') {'
+        w.line0(intro)
+        for stmt in self._statements:
+            stmt.writephp(w.with_more_indent())
 
 
 class TryCatchBlock(Statements):
@@ -499,8 +523,9 @@ class TryCatchBlock(Statements):
         var: PanVar = None,
         pyclass: str = None,
         tsclass: str = None,
+        phpclass: str = None,
     ) -> Iterator[CatchBlock2]:
-        block = CatchBlock2(var, pyclass=pyclass, tsclass=tsclass)
+        block = CatchBlock2(var, pyclass=pyclass, tsclass=tsclass, phpclass=phpclass)
         self._catchblocks.append(block)
         yield block
 
