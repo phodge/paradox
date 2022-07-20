@@ -790,8 +790,10 @@ def pan(value: Pannable) -> PanExpr:
     if value is None:
         return PanLiteral(None)
 
-    assert value is ...
-    return PanOmit()
+    if value is ...:
+        return PanOmit()
+
+    raise TypeError(f"Unexpected value {value!r}")
 
 
 def panlist(values: Iterable[Pannable], innertype: CrossType = None) -> PanList:
