@@ -788,7 +788,8 @@ class DictBuilderStatement(Statement):
 
         # now do the omittable args
         for k, allowomit in self._keys:
-            raise Exception("omittable args aren't supported by PHP")
+            if allowomit:
+                raise Exception("omittable args aren't supported by PHP")
 
 
 class FunctionSpec(Statements):
