@@ -505,7 +505,24 @@ class CatchBlock2(Statements):
             stmt.writephp(w.with_more_indent())
 
 
+class FinallyBlock(Statements):
+    def writepy(self, w: FileWriter) -> None:
+        w.line0("finally:")
+        for stmt in self._statements:
+            stmt.writepy(w.with_more_indent())
+
+    def writets(self, w: FileWriter) -> None:
+        raise Exception("TODO: FinallyBlock is not finished")
+
+    def writephp(self, w: FileWriter) -> None:
+        w.line0('} finally {')
+        for stmt in self._statements:
+            stmt.writephp(w.with_more_indent())
+
+
 class TryCatchBlock(Statements):
+    _finallyblock: Optional[FinallyBlock] = None
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -529,6 +546,15 @@ class TryCatchBlock(Statements):
         self._catchblocks.append(block)
         yield block
 
+    @contextmanager
+    def withFinallyBlock(self) -> Iterator[FinallyBlock]:
+        if self._finallyblock:
+            raise Exception("Cannot have multiple FinallyBlocks under a single TryCatchBlock")
+
+        block = FinallyBlock()
+        self._finallyblock = block
+        yield block
+
     def writepy(self, w: FileWriter) -> None:
         w.line0('try:')
         for stmt in self._statements:
@@ -538,6 +564,10 @@ class TryCatchBlock(Statements):
         for cb in self._catchblocks:
             # write out catch blocks without increasing indent
             cb.writepy(w)
+
+        if self._finallyblock:
+            # write out finally: block without increasing indent
+            self._finallyblock.writepy(w)
 
     def writets(self, w: FileWriter) -> None:
         w.line0(f"try {{")
@@ -590,6 +620,22 @@ class TryCatchBlock(Statements):
                 stmt.writets(w.with_more_indent())
 
         w.line0(f"}}")
+
+    def writephp(self, w: FileWriter) -> None:
+        w.line0('try {')
+        for stmt in self._statements:
+            stmt.writephp(w.with_more_indent())
+
+        # catch blocks
+        for cb in self._catchblocks:
+            # write out catch blocks without increasing indent
+            cb.writephp(w)
+
+        if self._finallyblock:
+            # write out finally: block without increasing indent
+            self._finallyblock.writephp(w)
+
+        w.line0('}')
 
 
 class ForLoopBlock(Statements):
