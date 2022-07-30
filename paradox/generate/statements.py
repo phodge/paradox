@@ -666,6 +666,14 @@ class ForLoopBlock(Statements):
         # always put a blank line after a for loop
         w.blank()
 
+    def writephp(self, w: FileWriter) -> None:
+        w.line0(f'foreach ({self._expr.getPHPExpr()[0]} as {self._assign.getPHPExpr()[0]}) {{')
+        for stmt in self._statements:
+            stmt.writephp(w.with_more_indent())
+        w.line0(f'}}')
+        # always put a blank line after a for loop
+        w.blank()
+
 
 class ReturnStatement(StatementWithNoImports):
     _expr: PanExpr
