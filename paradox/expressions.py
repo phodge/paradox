@@ -22,7 +22,17 @@ if TYPE_CHECKING:
     # XXX: flake8 doesn't realise we're using ellipsis below
     from builtins import ellipsis  # noqa: F401
 
-Pannable = Union[str, int, bool, None, "ellipsis", "PanExpr"]
+Pannable = Union[
+    str,
+    int,
+    bool,
+    None,
+    "ellipsis",
+    "PanExpr",
+    # TODO: this should be List[Pannable] but mypy doesn't support this yet
+    List,
+    Dict,
+]
 
 
 class PyPrecedence(enum.Enum):
@@ -792,6 +802,12 @@ def pan(value: Pannable) -> PanExpr:
 
     if value is ...:
         return PanOmit()
+
+    if isinstance(value, list):
+        return panlist(value)
+
+    if isinstance(value, dict):
+        return pandict(value)
 
     raise TypeError(f"Unexpected value {value!r}")
 
