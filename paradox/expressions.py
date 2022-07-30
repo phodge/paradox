@@ -773,8 +773,8 @@ class PanCompare(PanExpr):
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         comp = self._getComp()
-        _arg1 = _wrapmult(self._arg1.getTSExpr())
-        _arg2 = _wrapmult(self._arg2.getTSExpr())
+        _arg1 = _wrapmult(self._arg1.getPHPExpr())
+        _arg2 = _wrapmult(self._arg2.getPHPExpr())
         return f"{_arg1} {comp} {_arg2}", PHPPrecedence.MultDiv
 
 
