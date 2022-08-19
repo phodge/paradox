@@ -424,7 +424,11 @@ class PanVar(PanExpr):
     def getprop(self, propname: str, type: FlexiType) -> "PanProp":
         return PanProp(propname, unflex(type), self)
 
-    def getitem(self, idx: Union[int, str], fallback: PanExpr = None) -> Union[PanIndexAccess, PanKeyAccess]:
+    def getitem(
+        self,
+        idx: Union[int, str],
+        fallback: PanExpr = None,
+    ) -> Union[PanIndexAccess, PanKeyAccess]:
         if isinstance(idx, int):
             assert idx == 0
             assert isinstance(self._type, CrossList)
