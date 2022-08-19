@@ -23,5 +23,5 @@ pytest = "^6.2.1"
 types-dataclasses = "^0.6.1"
 
 [build-system]
-requires = ["setuptools>=40.0", "wheel", "pytoml"]
-
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

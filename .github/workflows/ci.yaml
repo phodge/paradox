@@ -18,7 +18,7 @@ jobs:
             - run: poetry config virtualenvs.create false
             - run: poetry install
             - run: mypy .
-            - run: flake8 setup.py paradox
+            - run: flake8 paradox
 
     unit_tests:
       name: "Pytest"
