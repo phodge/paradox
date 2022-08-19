@@ -5,10 +5,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
-from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
-                                 PanLiteral, Pannable, PanOmit, PanProp,
-                                 PanVar, PHPPrecedence, pan, pannotomit,
-                                 pyexpr)
+from paradox.expressions import (HardCodedExpr, PanExpr, PanIndexAccess,
+                                 PanKeyAccess, PanLiteral, Pannable, PanOmit,
+                                 PanProp, PanVar, PHPPrecedence, pan,
+                                 pannotomit, pyexpr)
 from paradox.generate.files import FileWriter
 from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
@@ -223,6 +223,24 @@ class Statements(Statement):
         expr: Pannable,
     ) -> 'Iterator[ForLoopBlock]':
         loop = ForLoopBlock(assign, pan(expr))
+        self._statements.append(loop)
+        yield loop
+
+    @contextmanager
+    def withDictIter(
+        self,
+        v_dict: PanVar,
+        v_value: PanVar,
+        v_key: PanVar = None,
+    ) -> 'Iterator[ForLoopBlock]':
+        dictexpr = HardCodedExpr(
+            getphp=lambda: v_dict.getPHPExpr()[0],
+            getpy=lambda: f'({v_dict.getPyExpr()[0]}).values()',
+            type=CrossAny(),
+        )
+        if v_key:
+            raise Exception("Iterating over dict keys is not yet implemented")
+        loop = ForLoopBlock(v_value, dictexpr)
         self._statements.append(loop)
         yield loop
 
