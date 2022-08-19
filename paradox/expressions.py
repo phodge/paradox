@@ -398,9 +398,15 @@ class PanVar(PanExpr):
     def rawname(self) -> str:
         return self._name
 
+    def __repr__(self) -> str:
+        t = ''
+        if self._type:
+            t = ': ' + self._type.getPyType()[0]
+        return f'<PanVar({self._name}{t})>'
+
     def getPanType(self) -> CrossType:
         if self._type is None:
-            raise Exception("This PanVar has no type")
+            raise Exception(f"PanVar {self._name} has no type")
         return self._type
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
@@ -607,10 +613,10 @@ class PanPyOnly(PanExpr):
         return self._code, self._prec
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
-        raise Exception("PanPyOnly is unable to produce a TS expression")
+        raise Exception(f"PanPyOnly('{self._code}') is unable to produce a TS expression")
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        raise Exception("PanPyOnly is unable to produce a PHP expression")
+        raise Exception(f"PanPyOnly('{self._code}') is unable to produce a PHP expression")
 
 
 class PanPHPOnly(PanExpr):
