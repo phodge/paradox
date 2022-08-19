@@ -1,8 +1,8 @@
 import abc
 import enum
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Dict, Iterable, List, Mapping, Optional,
-                    Tuple, Union)
+from typing import (TYPE_CHECKING, Callable, Dict, Iterable, List, Mapping,
+                    Optional, Tuple, Union)
 
 from paradox.typing import (CrossAny, CrossBool, CrossDict, CrossList,
                             CrossNull, CrossNum, CrossOmit, CrossStr,
@@ -830,6 +830,38 @@ class PanCompare(PanExpr):
         _arg1 = _wrapmult(self._arg1.getPHPExpr())
         _arg2 = _wrapmult(self._arg2.getPHPExpr())
         return f"{_arg1} {comp} {_arg2}", PHPPrecedence.MultDiv
+
+
+class HardCodedExpr(PanExpr):
+    def __init__(
+        self,
+        getphp: Callable[[], str] = None,
+        getpy: Callable[[], str] = None,
+        getts: Callable[[], str] = None,
+        type: CrossType = None,
+    ) -> None:
+        self._getphp = getphp
+        self._getpy = getpy
+        self._getts = getts
+        self._type = type
+
+    def getPanType(self) -> CrossType:
+        return self._type or CrossAny()
+
+    def getPyExpr(self) -> Tuple[str, PyPrecedence]:
+        if not self._getpy:
+            raise Exception("HardCodedExpr has no getpy() callback")
+        return self._getpy(), PyPrecedence.MultDiv
+
+    def getTSExpr(self) -> Tuple[str, TSPrecedence]:
+        if not self._getts:
+            raise Exception("HardCodedExpr has no getts() callback")
+        return self._getts(), TSPrecedence.MultDiv
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        if not self._getphp:
+            raise Exception("HardCodedExpr has no getphp() callback")
+        return self._getphp(), PHPPrecedence.MultDiv
 
 
 # helpers
