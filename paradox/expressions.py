@@ -325,17 +325,22 @@ class PanCast(PanExpr):
 class _PanItemAccess(PanExpr):
     _target: PanExpr
     _idx: Union[int, str]
+    _fallback: Optional[PanExpr]
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
         targetstr, targetprec = self._target.getPyExpr()
         if targetprec.value > PyPrecedence.Dot.value:
             targetstr = "(" + targetstr + ")"
+        if self._fallback:
+            raise Exception("TODO: handle fallback")
         return targetstr + "[" + repr(self._idx) + "]", PyPrecedence.Dot
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         targetstr, targetprec = self._target.getTSExpr()
         if targetprec.value > TSPrecedence.Dot.value:
             targetstr = "(" + targetstr + ")"
+        if self._fallback:
+            raise Exception("TODO: handle fallback")
         return targetstr + "[" + repr(self._idx) + "]", TSPrecedence.Dot
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
@@ -343,18 +348,26 @@ class _PanItemAccess(PanExpr):
         if targetprec.value > PHPPrecedence.Arrow.value:
             targetstr = "(" + targetstr + ")"
 
+        precedence = PHPPrecedence.Arrow
         if isinstance(self._idx, int):
-            return targetstr + "[" + repr(self._idx) + "]", PHPPrecedence.Arrow
+            phpexpr = targetstr + "[" + repr(self._idx) + "]"
+        else:
+            phpexpr = targetstr + "[" + _phpstr(self._idx) + "]"
 
-        return targetstr + "[" + _phpstr(self._idx) + "]", PHPPrecedence.Arrow
+        if self._fallback:
+            phpexpr += ' ?? ' + _wrapmult(self._fallback.getPHPExpr())
+            precedence = PHPPrecedence.MultDiv
+
+        return phpexpr, precedence
 
 
 class PanIndexAccess(_PanItemAccess):
-    def __init__(self, target: PanExpr, idx: int) -> None:
+    def __init__(self, target: PanExpr, idx: int, fallback: PanExpr = None) -> None:
         super().__init__()
 
         self._target = target
         self._idx = idx
+        self._fallback = fallback
 
     def getPanType(self) -> CrossType:
         targettype = self._target.getPanType()
@@ -363,11 +376,12 @@ class PanIndexAccess(_PanItemAccess):
 
 
 class PanKeyAccess(_PanItemAccess):
-    def __init__(self, target: PanExpr, key: str) -> None:
+    def __init__(self, target: PanExpr, key: str, fallback: PanExpr = None) -> None:
         super().__init__()
 
         self._target = target
         self._idx = key
+        self._fallback = fallback
 
     def getPanType(self) -> CrossType:
         targettype = self._target.getPanType()
@@ -399,17 +413,22 @@ class PanVar(PanExpr):
         return '$' + self._name, PHPPrecedence.Literal
 
     def __getitem__(self, idx: Union[int, str]) -> Union[PanIndexAccess, PanKeyAccess]:
-        if isinstance(idx, int):
-            assert idx == 0
-            assert isinstance(self._type, CrossList)
-            return PanIndexAccess(self, idx)
-
-        assert isinstance(idx, str)
-        assert isinstance(self._type, CrossDict)
-        return PanKeyAccess(self, idx)
+        return self.getitem(idx)
 
     def getprop(self, propname: str, type: FlexiType) -> "PanProp":
         return PanProp(propname, unflex(type), self)
+
+    def getitem(self, idx: Union[int, str], fallback: PanExpr = None) -> Union[PanIndexAccess, PanKeyAccess]:
+        if isinstance(idx, int):
+            assert idx == 0
+            assert isinstance(self._type, CrossList)
+            # TODO: check type of fallback if it is present
+            return PanIndexAccess(self, idx, fallback)
+
+        assert isinstance(idx, str)
+        assert isinstance(self._type, CrossDict) or isinstance(self._type, CrossAny)
+        # TODO: check type of fallback if it is present
+        return PanKeyAccess(self, idx, fallback)
 
 
 class PanProp(PanVar):
