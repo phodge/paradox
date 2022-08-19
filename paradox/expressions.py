@@ -189,7 +189,7 @@ class PanIsType(PanExpr):
     def __init__(
         self,
         expr: PanExpr,
-        expected: Literal["str", "int", "bool", "list"],
+        expected: Literal["str", "int", "bool", "list", "dict"],
     ) -> None:
         self._expr = expr
         self._expected = expected
@@ -209,6 +209,7 @@ class PanIsType(PanExpr):
             'int':  'is_int',
             'bool': 'is_bool',
             'list': 'is_array',
+            'dict': 'is_array',
         }
 
         code = functions[self._expected] + '(' + self._expr.getPHPExpr()[0] + ')'
@@ -893,3 +894,7 @@ def isstr(arg: Pannable) -> PanExpr:
 
 def islist(arg: Pannable) -> PanExpr:
     return PanIsType(pan(arg), 'list')
+
+
+def isdict(arg: Pannable) -> PanExpr:
+    return PanIsType(pan(arg), 'dict')
