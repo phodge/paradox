@@ -471,6 +471,7 @@ class PanProp(PanVar):
 class PanCall(PanExpr):
     _pargs: List[PanExpr]
     _kwargs: Dict[str, PanExpr]
+    _is_class_constructor = False
 
     def __init__(
         self,
@@ -484,6 +485,21 @@ class PanCall(PanExpr):
         self._pargs = list(args)
         self._kwargs = {k: v for k, v in kwargs.items()}
         assert all(v is not None for v in self._kwargs.values())
+
+    @classmethod
+    def callClassConstructor(
+        class_,
+        classname: str,
+        *args: PanExpr,
+        **kwargs: PanExpr,
+    ) -> "PanCall":
+        instance = PanCall(
+            classname,
+            *args,
+            **kwargs,
+        )
+        instance._is_class_constructor = True
+        return instance
 
     def addPositionalArg(self, expr: PanExpr) -> None:
         self._pargs.append(expr)
@@ -517,6 +533,7 @@ class PanCall(PanExpr):
         if isinstance(self._target, str):
             return f"{self._target}({argstr})", TSPrecedence.Dot
 
+        assert not self._is_class_constructor
         target, targetprec = self._target.getTSExpr()
         if targetprec.value > TSPrecedence.Dot.value:
             target = "(" + target + ")"
@@ -527,7 +544,8 @@ class PanCall(PanExpr):
         assert not len(self._kwargs), "KWArgs not supported in PHP"
 
         if isinstance(self._target, str):
-            return f"{self._target}({argstr})", PHPPrecedence.Arrow
+            new = 'new ' if self._is_class_constructor else ''
+            return f"{new}{self._target}({argstr})", PHPPrecedence.Arrow
 
         target, targetprec = self._target.getPHPExpr()
         if targetprec.value > PHPPrecedence.Arrow.value:
