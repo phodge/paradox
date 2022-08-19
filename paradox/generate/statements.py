@@ -792,8 +792,8 @@ class AssignmentStatement(StatementWithNoImports):
             w.line0(f'{left} = {self._expr.getTSExpr()[0]};')
 
     def writephp(self, w: FileWriter) -> None:
-        phptypes = self._target.getPanType().getPHPTypes()
         if self._declare and self._declaretype:
+            phptypes = self._target.getPanType().getPHPTypes()
             w.line0(f"/** @var {phptypes[1]} */")
 
         left = self._target.getPHPExpr()[0]
