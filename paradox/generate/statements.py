@@ -391,17 +391,38 @@ class SimpleRaise(StatementWithNoImports):
 class ConditionalBlock(Statements):
     _expr: PanExpr
     _statements: List[Statement]
+    _alternates: List[Tuple[PanExpr, Statements]]
+    _else: Optional[Statements]
 
     def __init__(self, expr: PanExpr, statements: List[Statement] = None) -> None:
         super().__init__()
 
         self._expr = expr
         self._statements = statements or []
+        self._alternates = []
+        self._else = None
+
+    @contextmanager
+    def withElseif(self, expr: PanExpr) -> 'Iterator[Statements]':
+        stmts = Statements()
+        self._alternates.append((expr, stmts))
+        yield stmts
+
+    @contextmanager
+    def withElse(self) -> 'Iterator[Statements]':
+        assert not self._else
+        stmts = Statements()
+        self._else = stmts
+        yield stmts
 
     def writepy(self, w: FileWriter) -> None:
         w.line0(f'if {self._expr.getPyExpr()[0]}:')
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
+        if self._alternates:
+            raise NotImplementedError("TODO: support 'elif' in python")
+        if self._else:
+            raise NotImplementedError("TODO: support 'else' in python")
         # always put a blank line after a conditional
         w.blank()
 
@@ -409,6 +430,10 @@ class ConditionalBlock(Statements):
         w.line0(f'if ({self._expr.getTSExpr()[0]}) {{')
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
+        if self._alternates:
+            raise NotImplementedError("TODO: support 'else if' in typescript")
+        if self._else:
+            raise NotImplementedError("TODO: support 'else' in typescript")
         w.line0('}')
 
         # always put a blank line after a conditional
@@ -418,6 +443,11 @@ class ConditionalBlock(Statements):
         w.line0(f'if ({self._expr.getPHPExpr()[0]}) {{')
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
+        if self._alternates:
+            raise NotImplementedError("TODO: support 'elseif' in PHP")
+        if self._else:
+            w.line0(f'}} else {{')
+            self._else.writephp(w.with_more_indent())
         w.line0('}')
 
         # always put a blank line after a conditional
