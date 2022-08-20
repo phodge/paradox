@@ -198,7 +198,15 @@ class PanIsType(PanExpr):
         return CrossBool()
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
-        raise Exception("TODO: finish this")  # noqa
+        types_ = {
+            'str':  'str',
+            'int':  'int',
+            'bool': 'bool',
+            'list': 'list',
+            'dict': 'dict',
+        }
+        expr = self._expr.getPyExpr()[0]
+        return f'isinstance({expr}, {types_[self._expected]})', PyPrecedence.Dot
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         raise Exception("TODO: finish this")  # noqa
