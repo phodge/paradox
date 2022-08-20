@@ -11,10 +11,12 @@ packages = [
 include = ["py.typed"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6,>=3.6.2"
 dataclasses = {version = "^0.7", python = "<3.7"}
 # needed for typing_extensions.Literal
 typing-extensions = {version = "^3.7.4", python = "<3.8"}
+black = "^22.6.0"
+isort = "^5.10.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.901"
