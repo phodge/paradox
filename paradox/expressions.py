@@ -332,7 +332,7 @@ class PanCast(PanExpr):
 
 class _PanItemAccess(PanExpr):
     _target: PanExpr
-    _idx: Union[int, str]
+    _idx: Union[int, str, PanExpr]
     _fallback: Optional[PanExpr]
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
@@ -341,7 +341,13 @@ class _PanItemAccess(PanExpr):
             targetstr = "(" + targetstr + ")"
         if self._fallback:
             raise Exception("TODO: handle fallback")
-        return targetstr + "[" + repr(self._idx) + "]", PyPrecedence.Dot
+
+        if isinstance(self._idx, PanExpr):
+            indexexpr = self._idx.getPyExpr()[0]
+        else:
+            indexexpr = repr(self._idx)
+
+        return targetstr + "[" + indexexpr + "]", PyPrecedence.Dot
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         targetstr, targetprec = self._target.getTSExpr()
@@ -349,18 +355,28 @@ class _PanItemAccess(PanExpr):
             targetstr = "(" + targetstr + ")"
         if self._fallback:
             raise Exception("TODO: handle fallback")
-        return targetstr + "[" + repr(self._idx) + "]", TSPrecedence.Dot
+
+        if isinstance(self._idx, PanExpr):
+            indexexpr = self._idx.getTSExpr()[0]
+        else:
+            indexexpr = repr(self._idx)
+
+        return targetstr + "[" + indexexpr + "]", TSPrecedence.Dot
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         targetstr, targetprec = self._target.getPHPExpr()
         if targetprec.value > PHPPrecedence.Arrow.value:
             targetstr = "(" + targetstr + ")"
 
-        precedence = PHPPrecedence.Arrow
-        if isinstance(self._idx, int):
-            phpexpr = targetstr + "[" + repr(self._idx) + "]"
+        if isinstance(self._idx, PanExpr):
+            indexexpr = self._idx.getPHPExpr()[0]
+        elif isinstance(self._idx, int):
+            indexexpr = repr(self._idx)
         else:
-            phpexpr = targetstr + "[" + _phpstr(self._idx) + "]"
+            indexexpr = _phpstr(self._idx)
+
+        precedence = PHPPrecedence.Arrow
+        phpexpr = targetstr + "[" + indexexpr + "]"
 
         if self._fallback:
             phpexpr += ' ?? ' + _wrapmult(self._fallback.getPHPExpr())
@@ -370,7 +386,12 @@ class _PanItemAccess(PanExpr):
 
 
 class PanIndexAccess(_PanItemAccess):
-    def __init__(self, target: PanExpr, idx: int, fallback: PanExpr = None) -> None:
+    def __init__(
+        self,
+        target: PanExpr,
+        idx: Union[int, PanExpr],
+        fallback: PanExpr = None,
+    ) -> None:
         super().__init__()
 
         self._target = target
@@ -384,7 +405,12 @@ class PanIndexAccess(_PanItemAccess):
 
 
 class PanKeyAccess(_PanItemAccess):
-    def __init__(self, target: PanExpr, key: str, fallback: PanExpr = None) -> None:
+    def __init__(
+        self,
+        target: PanExpr,
+        key: Union[str, PanExpr],
+        fallback: PanExpr = None,
+    ) -> None:
         super().__init__()
 
         self._target = target
@@ -434,9 +460,14 @@ class PanVar(PanExpr):
 
     def getitem(
         self,
-        idx: Union[int, str],
+        idx: Union[int, str, PanExpr],
         fallback: PanExpr = None,
     ) -> Union[PanIndexAccess, PanKeyAccess]:
+        if isinstance(idx, PanExpr):
+            if isinstance(self._type, CrossList):
+                return PanIndexAccess(self, idx)
+            return PanKeyAccess(self, idx)
+
         if isinstance(idx, int):
             assert idx == 0
             assert isinstance(self._type, CrossList)
