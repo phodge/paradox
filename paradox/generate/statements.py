@@ -229,18 +229,11 @@ class Statements(Statement):
     @contextmanager
     def withDictIter(
         self,
-        v_dict: PanVar,
-        v_value: PanVar,
+        v_dict: PanExpr,
+        v_val: PanVar,
         v_key: PanVar = None,
-    ) -> 'Iterator[ForLoopBlock]':
-        dictexpr = HardCodedExpr(
-            getphp=lambda: v_dict.getPHPExpr()[0],
-            getpy=lambda: f'({v_dict.getPyExpr()[0]}).values()',
-            type=CrossAny(),
-        )
-        if v_key:
-            raise Exception("Iterating over dict keys is not yet implemented")
-        loop = ForLoopBlock(v_value, dictexpr)
+    ) -> 'Iterator[DictLoopBlock]':
+        loop = DictLoopBlock(v_dict, v_val, v_key)
         self._statements.append(loop)
         yield loop
 
@@ -684,6 +677,48 @@ class TryCatchBlock(Statements):
             self._finallyblock.writephp(w)
 
         w.line0('}')
+
+
+class DictLoopBlock(Statements):
+    def __init__(
+        self,
+        expr: PanExpr,
+        v_val: PanVar,
+        v_key: PanVar = None,
+        statements: List[Statement] = None,
+    ) -> None:
+        super().__init__()
+
+        self._v_key = v_key
+        self._v_val = v_val
+        self._expr = expr
+        self._statements: List[Statement] = statements or []
+
+    def writepy(self, w: FileWriter) -> None:
+        v_val = self._v_val.getPyExpr()[0]
+        if self._v_key:
+            v_key = self._v_key.getPyExpr()[0]
+            w.line0(f'for {v_key}, {v_val} in ({self._expr.getPyExpr()[0]}).items():')
+        else:
+            w.line0(f'for {v_val} in ({self._expr.getPyExpr()[0]}).values():')
+        for stmt in self._statements:
+            stmt.writepy(w.with_more_indent())
+        # always put a blank line after a for loop
+        w.blank()
+
+    def writets(self, w: FileWriter) -> None:
+        raise Exception("TODO: implement this for TS")  # noqa
+
+    def writephp(self, w: FileWriter) -> None:
+        assignto = self._v_val.getPHPExpr()[0]
+        if self._v_key:
+            assignto = self._v_key.getPHPExpr()[0] + ' => ' + assignto
+        w.line0(f'foreach ({self._expr.getPHPExpr()[0]} as {assignto}) {{')
+        for stmt in self._statements:
+            stmt.writephp(w.with_more_indent())
+        w.line0(f'}}')
+        # always put a blank line after a for loop
+        w.blank()
 
 
 class ForLoopBlock(Statements):
