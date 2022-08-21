@@ -5,10 +5,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
-from paradox.expressions import (HardCodedExpr, PanExpr, PanIndexAccess,
-                                 PanKeyAccess, PanLiteral, Pannable, PanOmit,
-                                 PanProp, PanVar, PHPPrecedence, pan,
-                                 pannotomit, pyexpr)
+from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
+                                 PanLiteral, Pannable, PanOmit, PanProp,
+                                 PanVar, PHPPrecedence, pan, pannotomit,
+                                 pyexpr)
 from paradox.generate.files import FileWriter
 from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
