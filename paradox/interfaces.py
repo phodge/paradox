@@ -1,7 +1,7 @@
 import abc
 from contextlib import contextmanager
 from typing import (TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple,
-                    Union)
+                    TypeVar, Union)
 
 from typing_extensions import Literal
 
@@ -16,9 +16,12 @@ if TYPE_CHECKING:
     from paradox.typing import CrossType, FlexiType
 
 
+AlsoParam = TypeVar('AlsoParam', bound="Union[Statement, PanExpr]")
+
+
 class AcceptsStatements(abc.ABC):
     @abc.abstractmethod
-    def also(self, stmt: "Union[Statement, PanExpr]") -> None: ...
+    def also(self, stmt: AlsoParam) -> AlsoParam: ...
 
     @abc.abstractmethod
     def blank(self) -> None: ...
