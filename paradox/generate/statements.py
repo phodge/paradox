@@ -1190,8 +1190,11 @@ class FunctionSpec(Statements):
         for decoration in self._decorators_ts:
             w.line0(decoration)
 
-        if not len(modifiers):
-            modifiers.append('public')
+        if self._ismethod:
+            if not len(modifiers):
+                modifiers.append('public')
+        else:
+            modifiers.append('function')
 
         name = 'constructor' if self._isconstructor else self._name
         w.line0((' '.join(modifiers)) + ' ' + name + "(")
