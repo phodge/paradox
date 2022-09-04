@@ -10,6 +10,9 @@ from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
                                  PanVar, PHPPrecedence, pan, pannotomit,
                                  pyexpr)
 from paradox.generate.files import FileWriter
+from paradox.interfaces import (AcceptsStatements, DefinesCustomTypes,
+                                ImportSpecPHP, ImportSpecPy, ImportSpecTS,
+                                WantsImports)
 from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
 
@@ -22,11 +25,6 @@ except ImportError:
     # on python 3.8 and newer, when typing_extensions isn't available, we can just import
     # typing.Literal directly.
     from typing import Literal  # type: ignore
-
-
-ImportSpecPy = Tuple[str, Optional[List[str]]]
-ImportSpecTS = Tuple[str, Optional[List[str]]]
-ImportSpecPHP = Tuple[str, Optional[str]]
 
 
 class NoDefault:
@@ -46,19 +44,10 @@ def _pan_nodef(val: Union[Pannable, NoDefault]) -> Optional[PanExpr]:
     return pan(val)
 
 
-class Statement(abc.ABC):
+class Statement(WantsImports, DefinesCustomTypes, abc.ABC):
     def __init__(self) -> None:
         super().__init__()
         self._newtypes: List[Tuple[str, CrossType, bool]] = []
-
-    @abc.abstractmethod
-    def getImportsPy(self) -> Iterable[ImportSpecPy]: ...
-
-    @abc.abstractmethod
-    def getImportsTS(self) -> Iterable[ImportSpecTS]: ...
-
-    @abc.abstractmethod
-    def getImportsPHP(self) -> Iterable[ImportSpecPHP]: ...
 
     def getTypesPy(self) -> Iterable[Tuple[str, CrossType]]:
         """Yield tuples of <type name> <base type name>
@@ -89,7 +78,7 @@ class Statement(abc.ABC):
     def writephp(self, w: FileWriter) -> None: ...
 
 
-class Statements(Statement):
+class Statements(Statement, AcceptsStatements):
     _statements: List[Statement]
     _importspy: List[ImportSpecPy]
     _importsts: List[ImportSpecTS]
