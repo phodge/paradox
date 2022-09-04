@@ -3,16 +3,16 @@ import builtins
 import itertools
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union, cast
 
 from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
                                  PanLiteral, Pannable, PanOmit, PanProp,
                                  PanVar, PHPPrecedence, pan, pannotomit,
                                  pyexpr)
 from paradox.generate.files import FileWriter
-from paradox.interfaces import (AcceptsStatements, DefinesCustomTypes,
-                                ImportSpecPHP, ImportSpecPy, ImportSpecTS,
-                                WantsImports)
+from paradox.interfaces import (AcceptsStatements, AlsoParam,
+                                DefinesCustomTypes, ImportSpecPHP,
+                                ImportSpecPy, ImportSpecTS, WantsImports)
 from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
 
@@ -109,11 +109,13 @@ class Statements(Statement, AcceptsStatements):
     def blank(self) -> None:
         self._statements.append(BlankLine())
 
-    def also(self, stmt: Union[Statement, PanExpr]) -> None:
-        if isinstance(stmt, PanExpr):
-            self._statements.append(PanExprStatement(stmt))
+    def also(self, stmt_or_expr: AlsoParam) -> AlsoParam:
+        if isinstance(stmt_or_expr, PanExpr):
+            stmt: Statement = PanExprStatement(stmt_or_expr)
         else:
-            self._statements.append(stmt)
+            stmt = cast(Statement, stmt_or_expr)
+        self._statements.append(stmt)
+        return cast(AlsoParam, stmt)
 
     def alsoImportPy(self, module: str, names: List[str] = None) -> None:
         self._importspy.append((module, names))
