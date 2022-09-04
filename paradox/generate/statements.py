@@ -1254,8 +1254,10 @@ class FunctionSpec(Statements):
         if self._ismethod:
             modifiers.append('public')
 
+        prefix = modifiers + ['function']
+
         name = '__construct' if self._isconstructor else self._name
-        w.line0((' '.join(modifiers)) + ' function ' + name + "(")
+        w.line0((' '.join(prefix)) + ' ' + name + "(")
 
         if len(self._kwargs):
             raise NotSupportedError("PHP does not support kwargs")
