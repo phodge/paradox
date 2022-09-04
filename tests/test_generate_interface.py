@@ -1,25 +1,33 @@
-import io
+from textwrap import dedent
 
 import pytest
+from _paradoxtest import SupportedLang
 
 
-def test_generate_interface_spec() -> None:
-    from paradox.generate.files import FileWriter
+def test_generate_interface_spec(LANG: SupportedLang) -> None:
     from paradox.generate.statements import InterfaceSpec
+    from paradox.output import Script
     from paradox.typing import CrossBool
 
-    spec = InterfaceSpec('Window')
+    script = Script()
+    spec = script.also(InterfaceSpec('Window'))
     spec.addProperty('closed', CrossBool())
 
     # Note that InterfaceSpec doesn't yet support methods
 
-    # FIXME: we generate the interface but don't actually check its contents
-    spec.writets(FileWriter(io.StringIO(), '  '))
+    # this will probably never be implemented for Python, isn't currently supported for PHP
+    if LANG in ('php', 'python'):
+        with pytest.raises(NotImplementedError):
+            script.get_source_code(lang=LANG)
+        return
 
-    # this will probably never be implemented
-    with pytest.raises(NotImplementedError):
-        spec.writepy(FileWriter(io.StringIO(), '  '))
+    assert LANG == 'typescript'
+    generated = script.get_source_code(lang=LANG)
 
-    # this is not implemented yet
-    with pytest.raises(NotImplementedError):
-        spec.writephp(FileWriter(io.StringIO(), '  '))
+    assert generated == dedent(
+            '''
+            interface Window {
+                closed: boolean;
+            }
+            '''
+    ).lstrip()
