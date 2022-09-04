@@ -603,7 +603,10 @@ class PanCall(PanExpr):
         assert not len(self._kwargs), "KWArgs not supported in TS"
 
         if isinstance(self._target, str):
-            return f"{self._target}({argstr})", TSPrecedence.Dot
+            expr = f"{self._target}({argstr})"
+            if self._is_class_constructor:
+                expr = "new " + expr
+            return expr, TSPrecedence.Dot
 
         assert not self._is_class_constructor
         target, targetprec = self._target.getTSExpr()
