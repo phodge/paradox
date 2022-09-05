@@ -1,6 +1,7 @@
 import abc
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
+from typing import (TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple,
+                    Union)
 
 from typing_extensions import Literal
 
@@ -54,11 +55,11 @@ class AcceptsStatements(abc.ABC):
 
     @abc.abstractmethod
     @contextmanager
-    def withTryBlock(self) -> 'Iterable[TryCatchBlock]': ...
+    def withTryBlock(self) -> 'Iterator[TryCatchBlock]': ...
 
     @abc.abstractmethod
     @contextmanager
-    def withCond(self, expr: "PanExpr") -> 'Iterable[ConditionalBlock]': ...
+    def withCond(self, expr: "PanExpr") -> 'Iterator[ConditionalBlock]': ...
 
     @abc.abstractmethod
     @contextmanager
@@ -66,7 +67,7 @@ class AcceptsStatements(abc.ABC):
         self,
         assign: "PanVar",
         expr: "Pannable",
-    ) -> 'Iterable[ForLoopBlock]': ...
+    ) -> 'Iterator[ForLoopBlock]': ...
 
     @abc.abstractmethod
     @contextmanager
@@ -75,7 +76,7 @@ class AcceptsStatements(abc.ABC):
         v_dict: "PanExpr",
         v_val: "PanVar",
         v_key: "PanVar" = None,
-    ) -> 'Iterable[DictLoopBlock]': ...
+    ) -> 'Iterator[DictLoopBlock]': ...
 
 
 ImportSpecPy = Tuple[str, Optional[List[str]]]
@@ -85,7 +86,10 @@ ImportSpecPHP = Tuple[str, Optional[str]]
 
 class WantsImports(abc.ABC):
     @abc.abstractmethod
-    def getImportsPy(self) -> Iterable[ImportSpecPy]: ...
+    def getImportsPy(self) -> Iterable[ImportSpecPy]:
+        # XXX: we need to return an iterable here so that subclasses can use
+        #   yield from super().getImportsPy()
+        return []
 
     @abc.abstractmethod
     def getImportsTS(self) -> Iterable[ImportSpecTS]: ...
