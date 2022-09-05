@@ -1,51 +1,22 @@
 import abc
 import subprocess
-from collections import defaultdict
 from pathlib import Path
-from typing import IO, Dict, List, Optional, Set
+from typing import Optional
 
+from paradox.output import Script
 
-class FileWriter:
-    def __init__(
-        self,
-        f: IO[str],
-        indentstr: str,
-        baseindent: int = 0,
-    ) -> None:
-        self._f = f
-        self._indentstr: str = indentstr
-        self._baseindent: int = baseindent
-
-    def _wline(self, indent: int, line: str) -> None:
-        # when indent is -1, always write with no indent
-        indentstr = ''
-        if indent != -1:
-            indentstr = self._indentstr * (indent + self._baseindent)
-        self._f.write(indentstr + line + "\n")
-
-    def line0(self, line: str) -> None:
-        self._wline(0, line)
-
-    def line1(self, line: str) -> None:
-        self._wline(1, line)
-
-    def blank(self) -> None:
-        self._f.write("\n")
-
-    def with_more_indent(self) -> "FileWriter":
-        return FileWriter(self._f, self._indentstr, self._baseindent + 1)
+# imported for backwards-compatibility
+# isort: off
+from paradox.output import FileWriter  # noqa: F401
 
 
 class FileSpec(abc.ABC):
     def __init__(self, target: Path) -> None:
-        from paradox.generate.statements import Statements
-
         self.target: Path = target
-        self.contents: Statements = Statements()
-        self._filecomments: List[str] = []
+        self.contents = Script()
 
     def filecomment(self, text: str) -> None:
-        self._filecomments.append(text)
+        self.contents.add_file_comment(text)
 
     def getfirstline(self) -> Optional[str]:
         if not self.target.exists():
@@ -63,25 +34,7 @@ class FileSpec(abc.ABC):
 
 class FilePython(FileSpec):
     def writefile(self) -> None:
-        with self.target.open('w') as f:
-            # first, write out any file header
-            if len(self._filecomments):
-                f.write('"""\n')
-                for text in self._filecomments:
-                    f.write(text + "\n")
-                f.write('"""\n')
-
-            haveimports = False
-            for module, names in self.contents.getImportsPy():
-                if names is None:
-                    f.write(f"import {module}\n")
-                else:
-                    f.write(f"from {module} import {', '.join(names)}\n")
-                haveimports = True
-            if haveimports:
-                f.write("\n")
-
-            self.contents.writepy(FileWriter(f, '    '))
+        self.contents.write_to_path(self.target, lang='python')
 
     def makepretty(self) -> None:
         subprocess.check_call(['isort', self.target])
@@ -95,45 +48,13 @@ class FileTS(FileSpec):
 
         self.npmroot: Path = npmroot
 
-    def writefile(self) -> None:
-        # group imports by source module so that we can remove duplicates
-        imports_by_module: Dict[str, Set[Optional[str]]] = defaultdict(set)
-        for module, names in self.contents.getImportsTS():
-            if names is None:
-                imports_by_module[module].add(None)
-            else:
-                imports_by_module[module].update(names)
-
-        with self.target.open('w') as f:
-            # first, write out any file header
-            for text in self._filecomments:
-                f.write(f"// {text}\n")
-
-            # next, write out imports
-            for module, names2 in imports_by_module.items():
-                strnames = set()
-                for name in names2:
-                    if name is None:
-                        f.write(f"import '{module}';\n")
-                    else:
-                        strnames.add(name)
-                for name in sorted(strnames):
-                    f.write(f"import {{{name}}} from '{module}';\n")
-            if len(imports_by_module):
-                f.write("\n")
-
-            # next, write out custom types
-            havenewtypes = False
-            for newtype, crossbase, export in self.contents.getTypesTS():
-                havenewtypes = True
-                if export:
-                    f.write('export ')
-                tstype = crossbase.getTSType()[0]
-                f.write(f"type {newtype} = {tstype} & {{readonly brand: unique symbol}};\n")
-            if havenewtypes:
-                f.write("\n")
-
-            self.contents.writets(FileWriter(f, '  '))
+    def writefile(self, indentstr: str = '  ') -> None:
+        self.contents.write_to_path(
+            self.target,
+            lang='typescript',
+            # for backwards compatibility with old versions
+            indentstr='  ',
+        )
 
     def makepretty(self) -> None:
         # sort imports
@@ -155,38 +76,13 @@ class FilePHP(FileSpec):
         self._namespace = namespace
 
     def writefile(self) -> None:
-        # group imports by source module so that we can sort them
-        imports: Dict[str, Optional[str]] = {}
-        for original, alias in self.contents.getImportsPHP():
-            try:
-                assert imports[original] == alias
-            except KeyError:
-                imports[original] = alias
-
-        with self.target.open('w') as f:
-            # first, write out any file header
-            f.write("<?php\n\n")
-            for text in self._filecomments:
-                f.write(f"// {text}\n")
-            if len(self._filecomments):
-                f.write("\n")
-
-            # next, write out file namespace
-            if self._namespace:
-                f.write(f"namespace {self._namespace};\n\n")
-
-            # next, write out imports
-            wroteimports = False
-            for original, alias in sorted(imports.items()):
-                if alias:
-                    f.write(f"use {original} as {alias};\n")
-                else:
-                    f.write(f"use {original};\n")
-                wroteimports = True
-            if wroteimports:
-                f.write("\n")
-
-            self.contents.writephp(FileWriter(f, '  '))
+        self.contents.write_to_path(
+            self.target,
+            lang='php',
+            phpnamespace=self._namespace,
+            # for backwards compatibility with old versions
+            indentstr='  ',
+        )
 
     def makepretty(self) -> None:
         # TODO: run php-cs-fixer over the file to format it correctly
