@@ -793,7 +793,7 @@ class ListAppendStatement(StatementWithNoImports):
         w.line0(list_ + '[] = ' + self._value.getPHPExpr()[0] + ';')
 
 
-class AssignmentStatement(StatementWithNoImports):
+class AssignmentStatement(Statement):
     def __init__(
         self,
         target: Union[PanVar, PanKeyAccess, PanIndexAccess],
@@ -810,6 +810,22 @@ class AssignmentStatement(StatementWithNoImports):
         self._expr: Optional[PanExpr] = expr
         self._declare: bool = declare
         self._declaretype: bool = declaretype
+
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
+        # no imports are required for declaring a PHP type
+        return []
+
+    def getImportsTS(self) -> Iterable[ImportSpecTS]:
+        return []
+
+    def getImportsPy(self) -> Iterable[ImportSpecPy]:
+        if self._declaretype and self._declaretype:
+            pantype: CrossType = self._target.getPanType()
+            for module, name in pantype.getPyImports():
+                if name is None:
+                    yield module, None
+                else:
+                    yield module, [name]
 
     def writepy(self, w: FileWriter) -> None:
         left = self._target.getPyExpr()[0]
