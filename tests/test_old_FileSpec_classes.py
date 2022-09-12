@@ -48,7 +48,7 @@ def test_FilePHP_produces_php(tmppath: Path, namespace: Optional[str]) -> None:
             // Use it for testing{linebreak}
             {nsline}
             if (False) {{
-                strlen('');
+              strlen('');
             }}
 
             /** @var int */
@@ -122,7 +122,7 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
             // This is a test script
             // Use it for testing
             if (False) {
-                alert('hello, world');
+              alert('hello, world');
             }
 
             let z: number[] = [1770];
