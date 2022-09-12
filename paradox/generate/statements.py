@@ -241,8 +241,7 @@ class Statements(Statement, AcceptsStatements):
 
 class StatementWithNoImports(Statement):
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
-        z: List[ImportSpecPy] = []
-        return z
+        return []
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         return []
