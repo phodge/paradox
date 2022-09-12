@@ -222,6 +222,7 @@ class CrossOptional(CrossType):
         super().__init__()
 
         self._inner: CrossType = inner
+        self._pythonotherimports['typing'].append(None)
 
     def expandWith(self, *other: CrossType) -> "CrossUnion":
         items = [self._inner]
