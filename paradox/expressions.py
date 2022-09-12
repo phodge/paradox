@@ -168,6 +168,10 @@ class PanLiteral(PanExpr):
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         if self._val is None:
             return "null", TSPrecedence.Literal
+        if self._val is True:
+            return "true", TSPrecedence.Literal
+        if self._val is False:
+            return "false", TSPrecedence.Literal
         return repr(self._val), TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:

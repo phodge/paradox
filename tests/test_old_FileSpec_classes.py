@@ -121,7 +121,7 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
             '''
             // This is a test script
             // Use it for testing
-            if (False) {
+            if (false) {
               alert('hello, world');
             }
 
