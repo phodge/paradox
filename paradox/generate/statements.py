@@ -1706,9 +1706,12 @@ class InterfaceSpec(Statement):
 
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
         yield from super().getImportsPy()
-        for name, crosstype in self._properties:
-            raise Exception("TODO: get imports from property types")  # noqa
-            yield from crosstype.getImportsPy()
+        for _, crosstype in self._properties:
+            for module, name in crosstype.getPyImports():
+                if name:
+                    yield module, [name]
+                else:
+                    yield module, None
 
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
         raise NotImplementedError("TODO: not implemented")
