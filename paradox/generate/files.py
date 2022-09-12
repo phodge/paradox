@@ -71,11 +71,15 @@ class FilePython(FileSpec):
                     f.write(text + "\n")
                 f.write('"""\n')
 
+            haveimports = False
             for module, names in self.contents.getImportsPy():
                 if names is None:
                     f.write(f"import {module}\n")
                 else:
                     f.write(f"from {module} import {', '.join(names)}\n")
+                haveimports = True
+            if haveimports:
+                f.write("\n")
 
             self.contents.writepy(FileWriter(f, '    '))
 
