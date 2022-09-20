@@ -16,6 +16,10 @@ if TYPE_CHECKING:
     from paradox.typing import CrossType, FlexiType
 
 
+class NotSupportedError(NotImplementedError):
+    """When you attempt to use a feature that is not supported by the target language."""
+
+
 AlsoParam = TypeVar('AlsoParam', bound="Union[Statement, PanExpr]")
 
 

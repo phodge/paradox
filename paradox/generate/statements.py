@@ -11,7 +11,8 @@ from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
                                  pyexpr)
 from paradox.interfaces import (AcceptsStatements, AlsoParam,
                                 DefinesCustomTypes, ImportSpecPHP,
-                                ImportSpecPy, ImportSpecTS, WantsImports)
+                                ImportSpecPy, ImportSpecTS, NotSupportedError,
+                                WantsImports)
 from paradox.output import FileWriter
 from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
@@ -1191,7 +1192,8 @@ class FunctionSpec(Statements):
             modifiers.append('static')
 
         # first write out overloads
-        assert not len(self._overloads), "TS overloads not supported yet"
+        if self._overloads:
+            raise NotImplementedError("TypeScript overloads are not yet implemented")
 
         for decoration in self._decorators_ts:
             w.line0(decoration)
@@ -1205,7 +1207,8 @@ class FunctionSpec(Statements):
         name = 'constructor' if self._isconstructor else self._name
         w.line0((' '.join(modifiers)) + ' ' + name + "(")
 
-        assert not len(self._kwargs), "TS does not support kwargs"
+        if self._kwargs:
+            raise NotSupportedError("TypeScript does not support kwargs")
 
         # header
         for argname, crosstype, argdefault in self._pargs:
@@ -1245,7 +1248,8 @@ class FunctionSpec(Statements):
             modifiers.append('static')
 
         # first write out overloads
-        assert not len(self._overloads), "Overloads not possible in PHP"
+        if self._overloads:
+            raise NotSupportedError("PHP does not support overloads")
 
         if self._ismethod:
             modifiers.append('public')
@@ -1253,7 +1257,8 @@ class FunctionSpec(Statements):
         name = '__construct' if self._isconstructor else self._name
         w.line0((' '.join(modifiers)) + ' function ' + name + "(")
 
-        assert not len(self._kwargs), "PHP does not support kwargs"
+        if len(self._kwargs):
+            raise NotSupportedError("PHP does not support kwargs")
 
         # header
         argnum = 0
