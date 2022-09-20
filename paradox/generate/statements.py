@@ -9,9 +9,9 @@ from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
                                  PanLiteral, Pannable, PanOmit, PanProp,
                                  PanVar, PHPPrecedence, pan, pannotomit,
                                  pyexpr)
-from paradox.interfaces import (AcceptsStatements, DefinesCustomTypes,
-                                ImportSpecPHP, ImportSpecPy, ImportSpecTS,
-                                WantsImports)
+from paradox.interfaces import (AcceptsStatements, AlsoParam,
+                                DefinesCustomTypes, ImportSpecPHP,
+                                ImportSpecPy, ImportSpecTS, WantsImports)
 from paradox.output import FileWriter
 from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
                             FlexiType, maybe, omittable, unflex)
