@@ -177,10 +177,10 @@ class PanLiteral(PanExpr):
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         if self._val is None:
             return "null", PHPPrecedence.Literal
-        if isinstance(self._val, int):
-            return repr(self._val), PHPPrecedence.Literal
         if isinstance(self._val, bool):
             return ('true' if self._val else 'false'), PHPPrecedence.Literal
+        if isinstance(self._val, int):
+            return repr(self._val), PHPPrecedence.Literal
         assert isinstance(self._val, str)
         return _phpstr(self._val), PHPPrecedence.Literal
 
