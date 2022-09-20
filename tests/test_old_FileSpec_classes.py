@@ -47,7 +47,7 @@ def test_FilePHP_produces_php(tmppath: Path, namespace: Optional[str]) -> None:
             // This is a test script
             // Use it for testing{linebreak}
             {nsline}
-            if (False) {{
+            if (false) {{
               strlen('');
             }}
 
