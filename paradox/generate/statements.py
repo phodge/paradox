@@ -1313,6 +1313,9 @@ class FunctionSpec(Statements):
                 else:
                     yield module, None
 
+        if self._overloads:
+            yield 'typing', None
+
         for overload in self._overloads:
             yield from overload.getImportsPy()
 
