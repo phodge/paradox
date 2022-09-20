@@ -225,7 +225,7 @@ class CrossOptional(CrossType):
         self._pythonotherimports['typing'].append(None)
 
     def expandWith(self, *other: CrossType) -> "CrossUnion":
-        items = [self._inner]
+        items = [self._inner, CrossNull()]
         items.extend(other)
         return CrossUnion(items)
 
