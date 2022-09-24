@@ -28,9 +28,11 @@ jobs:
       # checkout your code
       - uses: actions/checkout@v2
 
-      # If you use poetry, you can just install your project requirements:
+      # NOTE: when I attempted to use "poetry install" here, the dependencies
+      # were installed, but couldn't be imported. Poetry said it was skipping
+      # virtualenv creation, but I don't know where it put the packages.
       - name: Install all dependencies
-        run: poetry install
+        run: pip install .
 
       - name: isort all files
         run: isort paradox _paradoxtest tests
