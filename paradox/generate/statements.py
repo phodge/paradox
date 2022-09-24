@@ -1409,7 +1409,6 @@ class ClassSpec(Statement):
         isdataclass: bool = False,
         tsexport: bool = False,
         tsbase: str = None,
-        appendto: Statements = None,
     ) -> None:
         super().__init__()
 
@@ -1431,9 +1430,6 @@ class ClassSpec(Statement):
         self._importspy = []
         self._importsts = []
         self._importsphp = []
-
-        if appendto:
-            appendto.also(self)
 
     @property
     def classname(self) -> str:
@@ -1750,16 +1746,13 @@ class ClassSpec(Statement):
 
 class InterfaceSpec(Statement):
     def __init__(
-        self, name: str, *, tsexport: bool = False, appendto: Statements = None
+        self, name: str, *, tsexport: bool = False,
     ) -> None:
         super().__init__()
 
         self._name = name
         self._properties: List[Tuple[str, CrossType]] = []
         self._tsexport: bool = tsexport
-
-        if appendto:
-            appendto.also(self)
 
     def addProperty(
         self,
