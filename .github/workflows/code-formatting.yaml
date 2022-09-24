@@ -1,0 +1,55 @@
+# only run on Pull Request branches when python files have changed
+on:
+  pull_request:
+    paths:
+      - "**/*.py"
+      - .github/workflows
+      - pyproject.toml
+
+name: "Isort / Black"
+
+jobs:
+  blacken:
+    name: "Run isort and black"
+
+    # Skip this job when already in a "...-blacken" branch. MagicPR already
+    # has mechanisms to prevent recursive creation of pull requests, but
+    # adding the job rule here saves wasting CI resources.
+    if: "!endsWith(github.head_ref, '-blacken')"
+
+    runs-on: ubuntu-latest
+    container: {image: "vertigo1/magicpr-demo:2022.0"}
+
+    # Important! This job needs permissions to push new commits and
+    # create pull requests
+    permissions: {contents: write, pull-requests: write}
+
+    steps:
+      # checkout your code
+      - uses: actions/checkout@v2
+
+      # NOTE: when I attempted to use "poetry install" here, the dependencies
+      # were installed, but couldn't be imported. Poetry said it was skipping
+      # virtualenv creation, but I don't know where it put the packages.
+      - name: Install all dependencies
+        run: pip install .
+
+      - name: isort all files
+        run: isort paradox _paradoxtest tests
+
+      - name: Blacken all files
+        run: black paradox _paradoxtest tests
+
+      # XXX: this is needed to prevent the following error in github CI:
+      #   fatal: detected dubious ownership in repository at '/__w/paradox/paradox'
+      - name: hacky workaround
+        run: |
+            git config --global --add safe.directory /__w/paradox/paradox
+
+      - name: Submit a Pull Request with formatting changes
+        run: |
+            magicpr suggest-changes \
+                --auth-token="${{ github.token }}" \
+                --branch-suffix=-blacken \
+                --commit-message='Blacken all .py files' \
+                --guidance='Please merge these python style changes'
