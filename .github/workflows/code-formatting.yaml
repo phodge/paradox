@@ -40,6 +40,12 @@ jobs:
       - name: Blacken all files
         run: black paradox _paradoxtest tests
 
+      # XXX: this is needed to prevent the following error in github CI:
+      #   fatal: detected dubious ownership in repository at '/__w/paradox/paradox'
+      - name: hacky workaround
+        run: |
+            git config --global --add safe.directory /__w/paradox/paradox
+
       - name: Submit a Pull Request with formatting changes
         run: |
             magicpr suggest-changes \
