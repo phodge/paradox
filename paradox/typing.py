@@ -141,7 +141,7 @@ class CrossLiteral(CrossType):
         super().__init__()
 
         # FIXME: we need to make sure typing_extensions is imported
-        self._pythonotherimports['typing_extensions'].append(None)
+        self._pythonotherimports["typing_extensions"].append(None)
 
         assert len(variants)
         self._variants: List[Union[str, int, bool]] = variants
@@ -167,27 +167,28 @@ class CrossLiteral(CrossType):
         subtypes = set()
         for v in self._variants:
             if isinstance(v, str):
-                subtypes.add('string')
+                subtypes.add("string")
             elif isinstance(v, int):
-                subtypes.add('int')
+                subtypes.add("int")
             else:
                 assert isinstance(v, bool)
-                subtypes.add('bool')
+                subtypes.add("bool")
         subtypes2 = list(sorted(subtypes))
         assert len(subtypes2)
         if len(subtypes2) == 1:
             return subtypes2[0], subtypes2[0], True
 
-        return 'mixed', '|'.join(subtypes2), False
+        return "mixed", "|".join(subtypes2), False
 
 
 class CrossOmit(CrossType):
     """Represents the Type of an argument when it is omitted."""
+
     def __init__(self) -> None:
         super().__init__()
 
         # FIXME: we need to make sure 'builtins' module is imported
-        self._pythonotherimports['builtins'].append(None)
+        self._pythonotherimports["builtins"].append(None)
 
     def getPyType(self) -> Tuple[str, bool]:
         return "builtins.ellipsis", True
@@ -222,7 +223,7 @@ class CrossOptional(CrossType):
         super().__init__()
 
         self._inner: CrossType = inner
-        self._pythonotherimports['typing'].append(None)
+        self._pythonotherimports["typing"].append(None)
 
     def expandWith(self, *other: CrossType) -> "CrossUnion":
         items = [self._inner, CrossNull()]
@@ -240,7 +241,7 @@ class CrossOptional(CrossType):
         innertype = self._inner.getPHPTypes()[1]
 
         # IIRC we have to put the null variant first to satisfy some php linters and/or formatters
-        return None, 'null|' + innertype, False
+        return None, "null|" + innertype, False
 
 
 class CrossList(CrossType):
@@ -270,7 +271,7 @@ class CrossList(CrossType):
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
         _, innertype, canbearray = self._wrapped.getPHPTypes()
-        return 'array', innertype + '[]' if canbearray else 'mixed', False
+        return "array", innertype + "[]" if canbearray else "mixed", False
 
 
 class CrossSet(CrossType):
@@ -323,11 +324,14 @@ class CrossDict(CrossType):
     def getPyType(self) -> Tuple[str, bool]:
         keytype, keyquote = self._key.getPyType()
         valtype, valquote = self._val.getPyType()
-        return f"typing.{self._pythondicttype}[{keytype}, {valtype}]", keyquote or valquote
+        return (
+            f"typing.{self._pythondicttype}[{keytype}, {valtype}]",
+            keyquote or valquote,
+        )
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
         _, innertype, canbearray = self._val.getPHPTypes()
-        return 'array', innertype + '[]' if canbearray else 'mixed', False
+        return "array", innertype + "[]" if canbearray else "mixed", False
 
 
 class CrossMap(CrossDict):
@@ -337,7 +341,7 @@ class CrossMap(CrossDict):
         return f"Map<{self._key.getTSType()[0]}, {self._val.getTSType()[0]}>", False
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
-        return 'Ds\\Map', 'Ds\\Map', True
+        return "Ds\\Map", "Ds\\Map", True
 
 
 class CrossUnion(CrossType):
@@ -372,11 +376,8 @@ class CrossUnion(CrossType):
         return f"typing.Union[{', '.join(inner)}]", quote
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
-        inner = [
-            t.getPHPTypes()[1]
-            for t in self._inner
-        ]
-        return None, '|'.join(inner), False
+        inner = [t.getPHPTypes()[1] for t in self._inner]
+        return None, "|".join(inner), False
 
 
 class CrossCallable(CrossType):
@@ -394,7 +395,7 @@ class CrossCallable(CrossType):
 
     def getTSType(self) -> Tuple[str, bool]:
         # obviously we only support up to 52 arguments
-        chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
         if len(self._args) > len(chars):
             raise Exception(
                 f"CrossCallable() implementation does not support more than {len(chars)} arguments"
@@ -414,7 +415,7 @@ class CrossCallable(CrossType):
         return f"typing.Callable[[{', '.join(argtypes)}], {rettype}]", quote or retquote
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
-        return None, 'callable', True
+        return None, "callable", True
 
 
 class CrossPythonOnlyType(CrossType):

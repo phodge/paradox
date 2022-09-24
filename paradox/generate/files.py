@@ -26,20 +26,24 @@ class FileSpec(abc.ABC):
             return f.readline()
 
     @abc.abstractmethod
-    def writefile(self) -> None: ...
+    def writefile(self) -> None:
+        ...
 
     @abc.abstractmethod
-    def makepretty(self) -> None: ...
+    def makepretty(self) -> None:
+        ...
 
 
 class FilePython(FileSpec):
     def writefile(self) -> None:
-        self.contents.write_to_path(self.target, lang='python')
+        self.contents.write_to_path(self.target, lang="python")
 
     def makepretty(self) -> None:
-        subprocess.check_call(['isort', self.target])
+        subprocess.check_call(["isort", self.target])
         # TODO: standardise these parameters somewhere
-        subprocess.check_call(['black', '--target-version=py37', '--line-length=98', self.target])
+        subprocess.check_call(
+            ["black", "--target-version=py37", "--line-length=98", self.target]
+        )
 
 
 class FileTS(FileSpec):
@@ -48,12 +52,12 @@ class FileTS(FileSpec):
 
         self.npmroot: Path = npmroot
 
-    def writefile(self, indentstr: str = '  ') -> None:
+    def writefile(self, indentstr: str = "  ") -> None:
         self.contents.write_to_path(
             self.target,
-            lang='typescript',
+            lang="typescript",
             # for backwards compatibility with old versions
-            indentstr='  ',
+            indentstr="  ",
         )
 
     def makepretty(self) -> None:
@@ -61,7 +65,7 @@ class FileTS(FileSpec):
         # TODO: work out if it's worthwhile getting an import sorter happening for this project
         if False:
             subprocess.check_call(
-                ['npx', 'import-sort', '--write', self.target.absolute()],
+                ["npx", "import-sort", "--write", self.target.absolute()],
                 cwd=self.npmroot,
             )
 
@@ -78,10 +82,10 @@ class FilePHP(FileSpec):
     def writefile(self) -> None:
         self.contents.write_to_path(
             self.target,
-            lang='php',
+            lang="php",
             phpnamespace=self._namespace,
             # for backwards compatibility with old versions
-            indentstr='  ',
+            indentstr="  ",
         )
 
     def makepretty(self) -> None:
