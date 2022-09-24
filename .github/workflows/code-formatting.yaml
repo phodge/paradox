@@ -1,0 +1,44 @@
+# only run on Pull Request branches when python files have changed
+on:
+  pull_request:
+    paths: ["**/*.py"]
+
+name: "Isort / Black"
+
+jobs:
+  blacken:
+    name: "Run isort and black"
+
+    # Skip this job when already in a "...-blacken" branch. MagicPR already
+    # has mechanisms to prevent recursive creation of pull requests, but
+    # adding the job rule here saves wasting CI resources.
+    if: "!endsWith(github.head_ref, '-blacken')"
+
+    runs-on: ubuntu-latest
+    container: {image: "vertigo1/magicpr-demo:2022.0"}
+
+    # Important! This job needs permissions to push new commits and
+    # create pull requests
+    permissions: {contents: write, pull-requests: write}
+
+    steps:
+      # checkout your code
+      - uses: actions/checkout@v2
+
+      # If you use poetry, you can just install your project requirements:
+      - name: Install all dependencies
+        run: poetry install
+
+      - name: isort all files
+        run: isort paradox _paradoxtest tests
+
+      - name: Blacken all files
+        run: black paradox _paradoxtest tests
+
+      - name: Submit a Pull Request with formatting changes
+        run: |
+            magicpr suggest-changes \
+                --auth-token="${{ github.token }}" \
+                --branch-suffix=-blacken \
+                --commit-message='Blacken all .py files' \
+                --guidance='Please merge these python style changes'
