@@ -40,10 +40,12 @@ def write_custom_types(writer: FileWriter, top: DefinesCustomTypes) -> None:
     havenewtypes = False
     for newtype, crossbase, export in top.getTypesTS():
         havenewtypes = True
-        prefix = ''
+        prefix = ""
         if export:
-            prefix = 'export '
+            prefix = "export "
         tstype = crossbase.getTSType()[0]
-        writer.line0(prefix + f"type {newtype} = {tstype} & {{readonly brand: unique symbol}};")
+        writer.line0(
+            prefix + f"type {newtype} = {tstype} & {{readonly brand: unique symbol}};"
+        )
     if havenewtypes:
         writer.blank()

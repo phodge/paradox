@@ -3,16 +3,26 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
 
-from paradox.interfaces import AcceptsStatements, AlsoParam
 from typing_extensions import Literal
+
+from paradox.interfaces import AcceptsStatements, AlsoParam
 
 if TYPE_CHECKING:
     import builtins
 
-    from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
-                                     Pannable, PanVar)
-    from paradox.generate.statements import (ConditionalBlock, DictLoopBlock,
-                                             ForLoopBlock, TryCatchBlock)
+    from paradox.expressions import (
+        PanExpr,
+        PanIndexAccess,
+        PanKeyAccess,
+        Pannable,
+        PanVar,
+    )
+    from paradox.generate.statements import (
+        ConditionalBlock,
+        DictLoopBlock,
+        ForLoopBlock,
+        TryCatchBlock,
+    )
     from paradox.typing import FlexiType
 
 
@@ -29,7 +39,7 @@ class FileWriter:
 
     def _wline(self, indent: int, line: str) -> None:
         # when indent is -1, always write with no indent
-        indentstr = ''
+        indentstr = ""
         if indent != -1:
             indentstr = self._indentstr * (indent + self._baseindent)
         self._f.write(indentstr + line + "\n")
@@ -80,7 +90,9 @@ class Script(AcceptsStatements):
     def alsoAppend(self, list_: "Pannable", value: "Pannable") -> None:
         self._content.alsoAppend(list_, value)
 
-    def alsoRaise(self, ctor: str = None, *, msg: str = None, expr: "PanExpr" = None) -> None:
+    def alsoRaise(
+        self, ctor: str = None, *, msg: str = None, expr: "PanExpr" = None
+    ) -> None:
         self._content.alsoRaise(ctor, msg=msg, expr=expr)
 
     def alsoAssign(
@@ -99,12 +111,12 @@ class Script(AcceptsStatements):
         return self._content.alsoDeclare(target, type, value)
 
     @contextmanager
-    def withTryBlock(self) -> 'Iterator[TryCatchBlock]':
+    def withTryBlock(self) -> "Iterator[TryCatchBlock]":
         with self._content.withTryBlock() as b:
             yield b
 
     @contextmanager
-    def withCond(self, expr: "PanExpr") -> 'Iterator[ConditionalBlock]':
+    def withCond(self, expr: "PanExpr") -> "Iterator[ConditionalBlock]":
         with self._content.withCond(expr) as cond:
             yield cond
 
@@ -113,7 +125,7 @@ class Script(AcceptsStatements):
         self,
         assign: "PanVar",
         expr: "Pannable",
-    ) -> 'Iterator[ForLoopBlock]':
+    ) -> "Iterator[ForLoopBlock]":
         with self._content.withFor(assign, expr) as loop:
             yield loop
 
@@ -123,7 +135,7 @@ class Script(AcceptsStatements):
         v_dict: "PanExpr",
         v_val: "PanVar",
         v_key: "PanVar" = None,
-    ) -> 'Iterator[DictLoopBlock]':
+    ) -> "Iterator[DictLoopBlock]":
         with self._content.withDictIter(v_dict, v_val, v_key) as loop:
             yield loop
 
@@ -132,38 +144,42 @@ class Script(AcceptsStatements):
         target: Path,
         *,
         lang: str,
-        indentstr: str = '    ',
+        indentstr: str = "    ",
         pretty: bool = False,
         phpnamespace: str = None,
     ) -> None:
         # TODO: add a targetversion arg which can be used to do things like choose a target
         # language version (e.g. lang="php", targetversion="3.7")
-        with target.open('w') as f:
+        with target.open("w") as f:
             writer = FileWriter(f, indentstr=indentstr)
-            self._write_to_writer(writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace)
+            self._write_to_writer(
+                writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace
+            )
 
     def write_to_handle(
-            self,
-            handle: IO[str],
-            *,
-            lang: str,
-            indentstr: str = '    ',
-            pretty: bool = False,
-            phpnamespace: str = None,
+        self,
+        handle: IO[str],
+        *,
+        lang: str,
+        indentstr: str = "    ",
+        pretty: bool = False,
+        phpnamespace: str = None,
     ) -> None:
         # TODO: add a targetversion arg which can be used to do things like choose a target
         # language version (e.g. lang="php", targetversion="3.7")
         writer = FileWriter(handle, indentstr=indentstr)
 
-        self._write_to_writer(writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace)
+        self._write_to_writer(
+            writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace
+        )
 
     def get_source_code(
-            self,
-            *,
-            lang: str,
-            indentstr: str = '    ',
-            pretty: bool = False,
-            phpnamespace: str = None,
+        self,
+        *,
+        lang: str,
+        indentstr: str = "    ",
+        pretty: bool = False,
+        phpnamespace: str = None,
     ) -> str:
         # TODO: add a targetversion arg which can be used to do things like choose a target
         # language version (e.g. lang="php", targetversion="3.7")
@@ -173,7 +189,9 @@ class Script(AcceptsStatements):
         handle = io.StringIO()
         writer = FileWriter(handle, indentstr=indentstr)
 
-        self._write_to_writer(writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace)
+        self._write_to_writer(
+            writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace
+        )
 
         handle.seek(0)
         return handle.read()
@@ -189,22 +207,25 @@ class Script(AcceptsStatements):
         if pretty:
             raise NotImplementedError("Prettifying is not yet supported")
 
-        if lang == 'php':
+        if lang == "php":
             from paradox.output import php
+
             write_file_comments = php.write_file_comments
             write_top_imports = php.write_top_imports
             write_custom_types = php.write_custom_types
 
             writer.line0("<?php")
             writer.blank()
-        elif lang == 'python':
+        elif lang == "python":
             from paradox.output import python
+
             write_file_comments = python.write_file_comments
             write_top_imports = python.write_top_imports
             write_custom_types = python.write_custom_types
         else:
-            assert lang == 'typescript'
+            assert lang == "typescript"
             from paradox.output import typescript
+
             write_file_comments = typescript.write_file_comments
             write_top_imports = typescript.write_top_imports
             write_custom_types = typescript.write_custom_types
@@ -214,7 +235,7 @@ class Script(AcceptsStatements):
             write_file_comments(writer, self._file_comments)
 
         # if php, might need to write a PHP namespace
-        if lang == 'php' and phpnamespace:
+        if lang == "php" and phpnamespace:
             writer.line0(f"namespace {phpnamespace};")
             writer.blank()
 
@@ -222,10 +243,10 @@ class Script(AcceptsStatements):
 
         write_custom_types(writer, self._content)
 
-        if lang == 'php':
+        if lang == "php":
             self._content.writephp(writer)
-        elif lang == 'python':
+        elif lang == "python":
             self._content.writepy(writer)
         else:
-            assert lang == 'typescript'
+            assert lang == "typescript"
             self._content.writets(writer)
