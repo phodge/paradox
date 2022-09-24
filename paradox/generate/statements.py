@@ -1282,7 +1282,7 @@ class FunctionSpec(Statements):
     def writephp(self, w: FileWriter) -> None:
         modifiers: List[str] = []
 
-        assert not self._isasync, "Async methods not possible for PHP"
+        assert not self._isasync, "PHP does not support async functions"
 
         if self._docstring:
             w.line0("/**")
