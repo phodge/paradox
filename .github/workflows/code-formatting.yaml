@@ -1,7 +1,10 @@
 # only run on Pull Request branches when python files have changed
 on:
   pull_request:
-    paths: ["**/*.py"]
+    paths:
+      - "**/*.py"
+      - .github/workflows
+      - pyproject.toml
 
 name: "Isort / Black"
 
