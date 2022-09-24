@@ -1,12 +1,31 @@
 import abc
 import enum
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Callable, Dict, Iterable, List, Mapping,
-                    Optional, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
-from paradox.typing import (CrossAny, CrossBool, CrossDict, CrossList,
-                            CrossNull, CrossNum, CrossOmit, CrossStr,
-                            CrossType, FlexiType, unflex)
+from paradox.typing import (
+    CrossAny,
+    CrossBool,
+    CrossDict,
+    CrossList,
+    CrossNull,
+    CrossNum,
+    CrossOmit,
+    CrossStr,
+    CrossType,
+    FlexiType,
+    unflex,
+)
 
 try:
     # typing_extensions is only installed on python < 3.8
@@ -74,7 +93,9 @@ def _wrapdot(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]])
     return code
 
 
-def _wrapmult(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]) -> str:
+def _wrapmult(
+    pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]
+) -> str:
     code, prec = pair
     if isinstance(prec, PyPrecedence):
         if prec.value >= PyPrecedence.MultDiv.value:
@@ -178,7 +199,7 @@ class PanLiteral(PanExpr):
         if self._val is None:
             return "null", PHPPrecedence.Literal
         if isinstance(self._val, bool):
-            return ('true' if self._val else 'false'), PHPPrecedence.Literal
+            return ("true" if self._val else "false"), PHPPrecedence.Literal
         if isinstance(self._val, int):
             return repr(self._val), PHPPrecedence.Literal
         assert isinstance(self._val, str)
@@ -203,28 +224,28 @@ class PanIsType(PanExpr):
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
         types_ = {
-            'str':  'str',
-            'int':  'int',
-            'bool': 'bool',
-            'list': 'list',
-            'dict': 'dict',
+            "str": "str",
+            "int": "int",
+            "bool": "bool",
+            "list": "list",
+            "dict": "dict",
         }
         expr = self._expr.getPyExpr()[0]
-        return f'isinstance({expr}, {types_[self._expected]})', PyPrecedence.Dot
+        return f"isinstance({expr}, {types_[self._expected]})", PyPrecedence.Dot
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         raise Exception("TODO: finish this")  # noqa
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         functions = {
-            'str':  'is_string',
-            'int':  'is_int',
-            'bool': 'is_bool',
-            'list': 'is_array',
-            'dict': 'is_array',
+            "str": "is_string",
+            "int": "is_int",
+            "bool": "is_bool",
+            "list": "is_array",
+            "dict": "is_array",
         }
 
-        code = functions[self._expected] + '(' + self._expr.getPHPExpr()[0] + ')'
+        code = functions[self._expected] + "(" + self._expr.getPHPExpr()[0] + ")"
         return code, PHPPrecedence.Arrow
 
 
@@ -254,15 +275,15 @@ class PanList(PanExpr):
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
         items = [v.getPyExpr()[0] for v in self._values]
-        return '[' + ', '.join(items) + ']', PyPrecedence.Literal
+        return "[" + ", ".join(items) + "]", PyPrecedence.Literal
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         items = [v.getTSExpr()[0] for v in self._values]
-        return '[' + ', '.join(items) + ']', TSPrecedence.Literal
+        return "[" + ", ".join(items) + "]", TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         items = [v.getPHPExpr()[0] for v in self._values]
-        return '[' + ', '.join(items) + ']', PHPPrecedence.Literal
+        return "[" + ", ".join(items) + "]", PHPPrecedence.Literal
 
     def panAppend(self, extra: PanExpr) -> None:
         self._values.append(extra)
@@ -296,13 +317,17 @@ class PanDict(PanExpr):
         return code, TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        inner = [_phpstr(k) + " => " + v.getPHPExpr()[0] for k, v in self._pairs.items()]
+        inner = [
+            _phpstr(k) + " => " + v.getPHPExpr()[0] for k, v in self._pairs.items()
+        ]
         code = "[" + ", ".join(inner) + "]"
         return code, PHPPrecedence.Literal
 
     def addPair(self, key: PanExpr, val: PanExpr) -> None:
         assert isinstance(key, PanLiteral), "PanDict currently only supports str keys"
-        assert isinstance(key.getPanType(), CrossStr), "PanDict currently only supports str keys"
+        assert isinstance(
+            key.getPanType(), CrossStr
+        ), "PanDict currently only supports str keys"
         realkey = key.getRawStr()
         assert realkey not in self._pairs
         self._pairs[realkey] = val
@@ -383,7 +408,7 @@ class _PanItemAccess(PanExpr):
         phpexpr = targetstr + "[" + indexexpr + "]"
 
         if self._fallback:
-            phpexpr += ' ?? ' + _wrapmult(self._fallback.getPHPExpr())
+            phpexpr += " ?? " + _wrapmult(self._fallback.getPHPExpr())
             precedence = PHPPrecedence.MultDiv
 
         return phpexpr, precedence
@@ -437,10 +462,10 @@ class PanVar(PanExpr):
         return self._name
 
     def __repr__(self) -> str:
-        t = ''
+        t = ""
         if self._type:
-            t = ': ' + self._type.getPyType()[0]
-        return f'<PanVar({self._name}{t})>'
+            t = ": " + self._type.getPyType()[0]
+        return f"<PanVar({self._name}{t})>"
 
     def getPanType(self) -> CrossType:
         if self._type is None:
@@ -454,7 +479,7 @@ class PanVar(PanExpr):
         return self._name, TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        return '$' + self._name, PHPPrecedence.Literal
+        return "$" + self._name, PHPPrecedence.Literal
 
     def __getitem__(self, idx: Union[int, str]) -> Union[PanIndexAccess, PanKeyAccess]:
         return self.getitem(idx)
@@ -492,7 +517,7 @@ class PanProp(PanVar):
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
         if self._owner is None:
-            return 'self.' + self._name, PyPrecedence.Dot
+            return "self." + self._name, PyPrecedence.Dot
         ownerexpr, ownerprec = self._owner.getPyExpr()
         if ownerprec.value > PyPrecedence.Dot.value:
             ownerexpr = "(" + ownerexpr + ")"
@@ -500,7 +525,7 @@ class PanProp(PanVar):
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         if self._owner is None:
-            return 'this.' + self._name, TSPrecedence.Dot
+            return "this." + self._name, TSPrecedence.Dot
         ownerexpr, ownerprec = self._owner.getTSExpr()
         if ownerprec.value > TSPrecedence.Dot.value:
             ownerexpr = "(" + ownerexpr + ")"
@@ -508,7 +533,7 @@ class PanProp(PanVar):
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         if self._owner is None:
-            return '$this->' + self._name, PHPPrecedence.Arrow
+            return "$this->" + self._name, PHPPrecedence.Arrow
         ownerexpr, ownerprec = self._owner.getPHPExpr()
         if ownerprec.value > PHPPrecedence.Arrow.value:
             ownerexpr = "(" + ownerexpr + ")"
@@ -591,7 +616,7 @@ class PanCall(PanExpr):
         assert not len(self._kwargs), "KWArgs not supported in PHP"
 
         if isinstance(self._target, str):
-            new = 'new ' if self._is_class_constructor else ''
+            new = "new " if self._is_class_constructor else ""
             return f"{new}{self._target}({argstr})", PHPPrecedence.Arrow
 
         target, targetprec = self._target.getPHPExpr()
@@ -615,7 +640,7 @@ class PanStringBuilder(PanExpr):
         return CrossStr()
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
-        expr = "f\""
+        expr = 'f"'
         for p in self._parts:
             if isinstance(p, PanLiteral) and p.isstr():
                 expr += repr(p.getRawStr())[1:-1].replace("{", "{{").replace("}", "}}")
@@ -623,7 +648,7 @@ class PanStringBuilder(PanExpr):
                 expr += "{"
                 expr += p.getPyExpr()[0]
                 expr += "}"
-        expr += "\""
+        expr += '"'
         return expr, PyPrecedence.Literal
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
@@ -649,7 +674,9 @@ class PanStringBuilder(PanExpr):
 
 
 class PanTSOnly(PanExpr):
-    def __init__(self, code: str, precedence: TSPrecedence = TSPrecedence.MultDiv) -> None:
+    def __init__(
+        self, code: str, precedence: TSPrecedence = TSPrecedence.MultDiv
+    ) -> None:
         self._code = code
         self._prec = precedence
 
@@ -667,7 +694,9 @@ class PanTSOnly(PanExpr):
 
 
 class PanPyOnly(PanExpr):
-    def __init__(self, code: str, precedence: PyPrecedence = PyPrecedence.MultDiv) -> None:
+    def __init__(
+        self, code: str, precedence: PyPrecedence = PyPrecedence.MultDiv
+    ) -> None:
         self._code = code
         self._prec = precedence
 
@@ -678,14 +707,20 @@ class PanPyOnly(PanExpr):
         return self._code, self._prec
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
-        raise Exception(f"PanPyOnly('{self._code}') is unable to produce a TS expression")
+        raise Exception(
+            f"PanPyOnly('{self._code}') is unable to produce a TS expression"
+        )
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        raise Exception(f"PanPyOnly('{self._code}') is unable to produce a PHP expression")
+        raise Exception(
+            f"PanPyOnly('{self._code}') is unable to produce a PHP expression"
+        )
 
 
 class PanPHPOnly(PanExpr):
-    def __init__(self, code: str, precedence: PHPPrecedence = PHPPrecedence.MultDiv) -> None:
+    def __init__(
+        self, code: str, precedence: PHPPrecedence = PHPPrecedence.MultDiv
+    ) -> None:
         self._code = code
         self._prec = precedence
 
@@ -703,7 +738,9 @@ class PanPHPOnly(PanExpr):
 
 
 class PanAndOr(PanExpr):
-    def __init__(self, operation: Literal["AND", "OR"], arguments: List[PanExpr]) -> None:
+    def __init__(
+        self, operation: Literal["AND", "OR"], arguments: List[PanExpr]
+    ) -> None:
         super().__init__()
 
         self._operation = operation
@@ -829,7 +866,9 @@ class PanIsNullExpr(PanExpr):
 
 
 class PanCompare(PanExpr):
-    def __init__(self, operation: Literal["===", "<", ">"], arg1: PanExpr, arg2: PanExpr) -> None:
+    def __init__(
+        self, operation: Literal["===", "<", ">"], arg1: PanExpr, arg2: PanExpr
+    ) -> None:
         super().__init__()
 
         self._operation = operation
@@ -938,7 +977,9 @@ def pan(value: Pannable) -> PanExpr:
 def panlist(values: Iterable[Pannable], innertype: CrossType = None) -> PanList:
     resolved: List[PanExpr] = [pan(v) for v in values]
     if innertype is None:
-        assert len(resolved), "If no values are provided to panlist(), a type must be specified"
+        assert len(
+            resolved
+        ), "If no values are provided to panlist(), a type must be specified"
         innertype = resolved[0].getPanType()
 
     for v in resolved:
@@ -951,7 +992,9 @@ def panlist(values: Iterable[Pannable], innertype: CrossType = None) -> PanList:
 def pandict(pairs: Mapping[str, Pannable], valuetype: CrossType = None) -> PanDict:
     resolved: Dict[str, PanExpr] = {k: pan(v) for k, v in pairs.items()}
     if valuetype is None:
-        assert len(resolved), "If no pairs are provided to pandict(), a type must be specified"
+        assert len(
+            resolved
+        ), "If no pairs are provided to pandict(), a type must be specified"
         valuetype = resolved[list(resolved.keys())[0]].getPanType()
 
     for k, v in resolved.items():
@@ -1003,20 +1046,20 @@ def isnull(arg: Pannable) -> PanExpr:
 
 
 def isbool(arg: Pannable) -> PanExpr:
-    return PanIsType(pan(arg), 'bool')
+    return PanIsType(pan(arg), "bool")
 
 
 def isint(arg: Pannable) -> PanExpr:
-    return PanIsType(pan(arg), 'int')
+    return PanIsType(pan(arg), "int")
 
 
 def isstr(arg: Pannable) -> PanExpr:
-    return PanIsType(pan(arg), 'str')
+    return PanIsType(pan(arg), "str")
 
 
 def islist(arg: Pannable) -> PanExpr:
-    return PanIsType(pan(arg), 'list')
+    return PanIsType(pan(arg), "list")
 
 
 def isdict(arg: Pannable) -> PanExpr:
-    return PanIsType(pan(arg), 'dict')
+    return PanIsType(pan(arg), "dict")

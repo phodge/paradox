@@ -12,20 +12,20 @@ def tmppath() -> Iterator[Path]:
         yield Path(tmpdir)
 
 
-@pytest.mark.parametrize('namespace', [None, 'Cool\\Code'])
+@pytest.mark.parametrize("namespace", [None, "Cool\\Code"])
 def test_FilePHP_produces_php(tmppath: Path, namespace: Optional[str]) -> None:
     from paradox.expressions import PanCall, PanVar, pan
     from paradox.generate.files import FilePHP
 
-    scriptname = tmppath / 'script.php'
+    scriptname = tmppath / "script.php"
     fp = FilePHP(scriptname, namespace=namespace)
 
     fp.filecomment("This is a test script")
     fp.filecomment("Use it for testing")
 
     with fp.contents.withCond(pan(False)) as cond:
-        cond.also(PanCall('strlen', pan('')))
-    fp.contents.alsoDeclare('z', int, PanCall('count', PanVar('GLOBALS', None)))
+        cond.also(PanCall("strlen", pan("")))
+    fp.contents.alsoDeclare("z", int, PanCall("count", PanVar("GLOBALS", None)))
 
     fp.writefile()
 
@@ -35,13 +35,15 @@ def test_FilePHP_produces_php(tmppath: Path, namespace: Optional[str]) -> None:
     # NOTE: comments in paradox.output.php.write_custom_types() states that PHP does not support
     # custom types
 
-    linebreak = ''
-    nsline = ''
+    linebreak = ""
+    nsline = ""
     if namespace:
-        linebreak = '\n'
-        nsline = f'namespace {namespace};\n'
-    assert scriptname.read_text() == dedent(
-            f'''
+        linebreak = "\n"
+        nsline = f"namespace {namespace};\n"
+    assert (
+        scriptname.read_text()
+        == dedent(
+            f"""
             <?php
 
             // This is a test script
@@ -53,10 +55,11 @@ def test_FilePHP_produces_php(tmppath: Path, namespace: Optional[str]) -> None:
 
             /** @var int */
             $z = count($GLOBALS);
-            '''
-    ).lstrip()
+            """
+        ).lstrip()
+    )
 
-    assert fp.getfirstline() == '<?php\n'
+    assert fp.getfirstline() == "<?php\n"
 
     # NOTE: FilePHP.makepretty() was never implemented
 
@@ -66,20 +69,22 @@ def test_FilePython_produces_python(tmppath: Path) -> None:
     from paradox.generate.files import FilePython
     from paradox.typing import maybe
 
-    scriptname = tmppath / 'script.py'
+    scriptname = tmppath / "script.py"
     fp = FilePython(scriptname)
 
     fp.filecomment("This is a test script")
     fp.filecomment("Use it for testing")
 
     with fp.contents.withCond(pan(False)) as cond:
-        cond.also(PanCall('len', pan('')))
+        cond.also(PanCall("len", pan("")))
 
-    fp.contents.alsoDeclare('z', maybe(int), PanCall('len', pan('five')))
+    fp.contents.alsoDeclare("z", maybe(int), PanCall("len", pan("five")))
 
     fp.writefile()
 
-    assert scriptname.read_text() == dedent(
+    assert (
+        scriptname.read_text()
+        == dedent(
             '''
             """
             This is a test script
@@ -92,7 +97,8 @@ def test_FilePython_produces_python(tmppath: Path) -> None:
 
             z: typing.Optional[int] = len('five')
             '''
-    ).lstrip()
+        ).lstrip()
+    )
 
     assert fp.getfirstline() == '"""\n'
 
@@ -104,21 +110,25 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
     from paradox.generate.files import FileTS
     from paradox.typing import CrossAny, CrossList, unflex
 
-    scriptname = tmppath / 'script.ts'
+    scriptname = tmppath / "script.ts"
     fp = FileTS(scriptname, npmroot=tmppath)
 
     fp.filecomment("This is a test script")
     fp.filecomment("Use it for testing")
 
     with fp.contents.withCond(pan(False)) as cond:
-        cond.also(PanCall('alert', pan('hello, world')))
+        cond.also(PanCall("alert", pan("hello, world")))
 
-    fp.contents.alsoDeclare('z', CrossList(unflex(int)), PanList([pan(1770)], CrossAny()))
+    fp.contents.alsoDeclare(
+        "z", CrossList(unflex(int)), PanList([pan(1770)], CrossAny())
+    )
 
     fp.writefile()
 
-    assert scriptname.read_text() == dedent(
-            '''
+    assert (
+        scriptname.read_text()
+        == dedent(
+            """
             // This is a test script
             // Use it for testing
             if (false) {
@@ -126,9 +136,10 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
             }
 
             let z: number[] = [1770];
-            '''
-    ).lstrip()
+            """
+        ).lstrip()
+    )
 
-    assert fp.getfirstline() == '// This is a test script\n'
+    assert fp.getfirstline() == "// This is a test script\n"
 
     # TODO: test fp.makepretty() somehow

@@ -5,17 +5,41 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union, cast
 
-from paradox.expressions import (PanExpr, PanIndexAccess, PanKeyAccess,
-                                 PanLiteral, Pannable, PanOmit, PanProp,
-                                 PanVar, PHPPrecedence, pan, pannotomit,
-                                 pyexpr)
-from paradox.interfaces import (AcceptsStatements, AlsoParam,
-                                DefinesCustomTypes, ImportSpecPHP,
-                                ImportSpecPy, ImportSpecTS, NotSupportedError,
-                                WantsImports)
+from paradox.expressions import (
+    PanExpr,
+    PanIndexAccess,
+    PanKeyAccess,
+    PanLiteral,
+    Pannable,
+    PanOmit,
+    PanProp,
+    PanVar,
+    PHPPrecedence,
+    pan,
+    pannotomit,
+    pyexpr,
+)
+from paradox.interfaces import (
+    AcceptsStatements,
+    AlsoParam,
+    DefinesCustomTypes,
+    ImportSpecPHP,
+    ImportSpecPy,
+    ImportSpecTS,
+    NotSupportedError,
+    WantsImports,
+)
 from paradox.output import FileWriter
-from paradox.typing import (CrossAny, CrossDict, CrossStr, CrossType,
-                            FlexiType, maybe, omittable, unflex)
+from paradox.typing import (
+    CrossAny,
+    CrossDict,
+    CrossStr,
+    CrossType,
+    FlexiType,
+    maybe,
+    omittable,
+    unflex,
+)
 
 try:
     # typing_extensions is only installed on python < 3.8
@@ -70,13 +94,16 @@ class Statement(WantsImports, DefinesCustomTypes, abc.ABC):
         self._newtypes.append((name, base, export))
 
     @abc.abstractmethod
-    def writepy(self, w: FileWriter) -> None: ...
+    def writepy(self, w: FileWriter) -> None:
+        ...
 
     @abc.abstractmethod
-    def writets(self, w: FileWriter) -> None: ...
+    def writets(self, w: FileWriter) -> None:
+        ...
 
     @abc.abstractmethod
-    def writephp(self, w: FileWriter) -> None: ...
+    def writephp(self, w: FileWriter) -> None:
+        ...
 
 
 class Statements(Statement, AcceptsStatements):
@@ -182,28 +209,30 @@ class Statements(Statement, AcceptsStatements):
         else:
             # FIXME: get rid of type: ignore here
             realtarget = PanVar(target, unflex(type))
-        self._statements.append(AssignmentStatement(
-            realtarget,
-            None if value is ... else pan(value),
-            declare=True,
-            declaretype=declaretype,
-        ))
+        self._statements.append(
+            AssignmentStatement(
+                realtarget,
+                None if value is ... else pan(value),
+                declare=True,
+                declaretype=declaretype,
+            )
+        )
         return realtarget
 
     @contextmanager
-    def withTryBlock(self) -> 'Iterator[TryCatchBlock]':
+    def withTryBlock(self) -> "Iterator[TryCatchBlock]":
         block = TryCatchBlock()
         self._statements.append(block)
         yield block
 
     @contextmanager
-    def withRawTS(self) -> 'Iterator[RawTypescript]':
+    def withRawTS(self) -> "Iterator[RawTypescript]":
         rawts = RawTypescript()
         self._statements.append(rawts)
         yield rawts
 
     @contextmanager
-    def withCond(self, expr: PanExpr) -> 'Iterator[ConditionalBlock]':
+    def withCond(self, expr: PanExpr) -> "Iterator[ConditionalBlock]":
         cond = ConditionalBlock(expr, [])
         self._statements.append(cond)
         yield cond
@@ -213,7 +242,7 @@ class Statements(Statement, AcceptsStatements):
         self,
         assign: PanVar,
         expr: Pannable,
-    ) -> 'Iterator[ForLoopBlock]':
+    ) -> "Iterator[ForLoopBlock]":
         loop = ForLoopBlock(assign, pan(expr))
         self._statements.append(loop)
         yield loop
@@ -224,7 +253,7 @@ class Statements(Statement, AcceptsStatements):
         v_dict: PanExpr,
         v_val: PanVar,
         v_key: PanVar = None,
-    ) -> 'Iterator[DictLoopBlock]':
+    ) -> "Iterator[DictLoopBlock]":
         loop = DictLoopBlock(v_dict, v_val, v_key)
         self._statements.append(loop)
         yield loop
@@ -260,13 +289,13 @@ class Comment(StatementWithNoImports):
         self._text = text
 
     def writepy(self, w: FileWriter) -> None:
-        w.line0('# ' + self._text)
+        w.line0("# " + self._text)
 
     def writets(self, w: FileWriter) -> None:
-        w.line0('// ' + self._text)
+        w.line0("// " + self._text)
 
     def writephp(self, w: FileWriter) -> None:
-        w.line0('// ' + self._text)
+        w.line0("// " + self._text)
 
 
 class BlankLine(StatementWithNoImports):
@@ -293,11 +322,12 @@ class PanExprStatement(StatementWithNoImports):
         w.line0(self._expr.getPyExpr()[0])
 
     def writephp(self, w: FileWriter) -> None:
-        w.line0(self._expr.getPHPExpr()[0] + ';')
+        w.line0(self._expr.getPHPExpr()[0] + ";")
 
 
 class HardCodedStatement(StatementWithNoImports):
     """Used for simple statements that only need to work in Python."""
+
     def __init__(
         self,
         python: str = None,
@@ -326,6 +356,7 @@ class HardCodedStatement(StatementWithNoImports):
 
 class RawTypescript(StatementWithNoImports):
     """Used for simple statements that only need to work in Python."""
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -349,7 +380,9 @@ class RawTypescript(StatementWithNoImports):
 class SimpleRaise(StatementWithNoImports):
     _ctor: Optional[str]
 
-    def __init__(self, ctor: str = None, *, msg: str = None, expr: PanExpr = None) -> None:
+    def __init__(
+        self, ctor: str = None, *, msg: str = None, expr: PanExpr = None
+    ) -> None:
         super().__init__()
 
         assert msg is not None or expr is not None
@@ -359,7 +392,7 @@ class SimpleRaise(StatementWithNoImports):
         self._expr = expr
 
     def writepy(self, w: FileWriter) -> None:
-        ctor = 'Exception'
+        ctor = "Exception"
         if self._ctor is not None:
             ctor = self._ctor
         if self._msg is None:
@@ -379,13 +412,14 @@ class SimpleRaise(StatementWithNoImports):
         w.line0(line)
 
     def writephp(self, w: FileWriter) -> None:
-        ctor = self._ctor or '\\Exception'
+        ctor = self._ctor or "\\Exception"
         if self._msg is None:
             assert self._expr is not None
             line = f"throw new {ctor}({self._expr.getPHPExpr()[0]});"
         else:
             # TODO: don't import this here
             from paradox.expressions import _phpstr
+
             line = f"throw new {ctor}({_phpstr(self._msg)});"
         w.line0(line)
 
@@ -405,20 +439,20 @@ class ConditionalBlock(Statements):
         self._else = None
 
     @contextmanager
-    def withElseif(self, expr: PanExpr) -> 'Iterator[Statements]':
+    def withElseif(self, expr: PanExpr) -> "Iterator[Statements]":
         stmts = Statements()
         self._alternates.append((expr, stmts))
         yield stmts
 
     @contextmanager
-    def withElse(self) -> 'Iterator[Statements]':
+    def withElse(self) -> "Iterator[Statements]":
         assert not self._else
         stmts = Statements()
         self._else = stmts
         yield stmts
 
     def writepy(self, w: FileWriter) -> None:
-        w.line0(f'if {self._expr.getPyExpr()[0]}:')
+        w.line0(f"if {self._expr.getPyExpr()[0]}:")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
         if self._alternates:
@@ -429,47 +463,47 @@ class ConditionalBlock(Statements):
         w.blank()
 
     def writets(self, w: FileWriter) -> None:
-        w.line0(f'if ({self._expr.getTSExpr()[0]}) {{')
+        w.line0(f"if ({self._expr.getTSExpr()[0]}) {{")
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
         if self._alternates:
             raise NotImplementedError("TODO: support 'else if' in typescript")
         if self._else:
             raise NotImplementedError("TODO: support 'else' in typescript")
-        w.line0('}')
+        w.line0("}")
 
         # always put a blank line after a conditional
         w.blank()
 
     def writephp(self, w: FileWriter) -> None:
-        w.line0(f'if ({self._expr.getPHPExpr()[0]}) {{')
+        w.line0(f"if ({self._expr.getPHPExpr()[0]}) {{")
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
         if self._alternates:
             raise NotImplementedError("TODO: support 'elseif' in PHP")
         if self._else:
-            w.line0(f'}} else {{')
+            w.line0(f"}} else {{")
             self._else.writephp(w.with_more_indent())
-        w.line0('}')
+        w.line0("}")
 
         # always put a blank line after a conditional
         w.blank()
 
 
 class CatchBlock(Statements):
-    def __init__(self, catchexpr: str = None, catchvar: str = '') -> None:
+    def __init__(self, catchexpr: str = None, catchvar: str = "") -> None:
         super().__init__()
 
         self.catchexpr = catchexpr
         self.catchvar = catchvar
 
     def writepy(self, w: FileWriter) -> None:
-        intro = 'except'
+        intro = "except"
         if self.catchexpr:
-            intro += ' ' + self.catchexpr
+            intro += " " + self.catchexpr
             if self.catchvar:
-                intro += ' as ' + self.catchvar
-        intro += ':'
+                intro += " as " + self.catchvar
+        intro += ":"
         w.line0(intro)
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
@@ -479,11 +513,11 @@ class CatchBlock(Statements):
 
     def writephp(self, w: FileWriter) -> None:
         if not self.catchexpr:
-            raise Exception('CatchBlock cannot be turned to PHP without a catchexpr')
+            raise Exception("CatchBlock cannot be turned to PHP without a catchexpr")
 
-        intro = '} catch (' + self.catchexpr
-        intro += ' $' + (self.catchvar or '_')
-        intro += ') {'
+        intro = "} catch (" + self.catchexpr
+        intro += " $" + (self.catchvar or "_")
+        intro += ") {"
         w.line0(intro)
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
@@ -516,7 +550,7 @@ class CatchBlock2(Statements):
         else:
             intro = "except Exception"
         if self._var:
-            intro += ' as ' + self._var.getPyExpr()[0]
+            intro += " as " + self._var.getPyExpr()[0]
         intro += ":"
         w.line0(intro)
         for stmt in self._statements:
@@ -527,11 +561,11 @@ class CatchBlock2(Statements):
 
     def writephp(self, w: FileWriter) -> None:
         if not self._phpclass:
-            raise Exception('CatchBlock2 cannot be turned to PHP without a phpclass')
+            raise Exception("CatchBlock2 cannot be turned to PHP without a phpclass")
 
-        intro = '} catch (' + self._phpclass
-        intro += ' $' + (self._var.rawname if self._var else '_')
-        intro += ') {'
+        intro = "} catch (" + self._phpclass
+        intro += " $" + (self._var.rawname if self._var else "_")
+        intro += ") {"
         w.line0(intro)
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
@@ -547,7 +581,7 @@ class FinallyBlock(Statements):
         raise Exception("TODO: FinallyBlock is not finished")
 
     def writephp(self, w: FileWriter) -> None:
-        w.line0('} finally {')
+        w.line0("} finally {")
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
 
@@ -561,7 +595,9 @@ class TryCatchBlock(Statements):
         self._catchblocks: List[Union[CatchBlock, CatchBlock2]] = []
 
     @contextmanager
-    def withCatchBlock(self, catchexpr: str, catchvar: str = '') -> Iterator[CatchBlock]:
+    def withCatchBlock(
+        self, catchexpr: str, catchvar: str = ""
+    ) -> Iterator[CatchBlock]:
         block = CatchBlock(catchexpr, catchvar)
         self._catchblocks.append(block)
         yield block
@@ -581,14 +617,16 @@ class TryCatchBlock(Statements):
     @contextmanager
     def withFinallyBlock(self) -> Iterator[FinallyBlock]:
         if self._finallyblock:
-            raise Exception("Cannot have multiple FinallyBlocks under a single TryCatchBlock")
+            raise Exception(
+                "Cannot have multiple FinallyBlocks under a single TryCatchBlock"
+            )
 
         block = FinallyBlock()
         self._finallyblock = block
         yield block
 
     def writepy(self, w: FileWriter) -> None:
-        w.line0('try:')
+        w.line0("try:")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
 
@@ -606,7 +644,9 @@ class TryCatchBlock(Statements):
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
 
-        assert len(self._catchblocks), "TryCatchBlock must have at least one Catch block"
+        assert len(
+            self._catchblocks
+        ), "TryCatchBlock must have at least one Catch block"
 
         # all catch blocks must be a CatchBlock2 and have the same var name
         catchvar = None
@@ -654,7 +694,7 @@ class TryCatchBlock(Statements):
         w.line0(f"}}")
 
     def writephp(self, w: FileWriter) -> None:
-        w.line0('try {')
+        w.line0("try {")
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
 
@@ -667,7 +707,7 @@ class TryCatchBlock(Statements):
             # write out finally: block without increasing indent
             self._finallyblock.writephp(w)
 
-        w.line0('}')
+        w.line0("}")
 
 
 class DictLoopBlock(Statements):
@@ -689,9 +729,9 @@ class DictLoopBlock(Statements):
         v_val = self._v_val.getPyExpr()[0]
         if self._v_key:
             v_key = self._v_key.getPyExpr()[0]
-            w.line0(f'for {v_key}, {v_val} in ({self._expr.getPyExpr()[0]}).items():')
+            w.line0(f"for {v_key}, {v_val} in ({self._expr.getPyExpr()[0]}).items():")
         else:
-            w.line0(f'for {v_val} in ({self._expr.getPyExpr()[0]}).values():')
+            w.line0(f"for {v_val} in ({self._expr.getPyExpr()[0]}).values():")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
         # always put a blank line after a for loop
@@ -703,11 +743,11 @@ class DictLoopBlock(Statements):
     def writephp(self, w: FileWriter) -> None:
         assignto = self._v_val.getPHPExpr()[0]
         if self._v_key:
-            assignto = self._v_key.getPHPExpr()[0] + ' => ' + assignto
-        w.line0(f'foreach ({self._expr.getPHPExpr()[0]} as {assignto}) {{')
+            assignto = self._v_key.getPHPExpr()[0] + " => " + assignto
+        w.line0(f"foreach ({self._expr.getPHPExpr()[0]} as {assignto}) {{")
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
-        w.line0(f'}}')
+        w.line0(f"}}")
         # always put a blank line after a for loop
         w.blank()
 
@@ -726,25 +766,29 @@ class ForLoopBlock(Statements):
         self._statements: List[Statement] = statements or []
 
     def writepy(self, w: FileWriter) -> None:
-        w.line0(f'for {self._assign.getPyExpr()[0]} in {self._expr.getPyExpr()[0]}:')
+        w.line0(f"for {self._assign.getPyExpr()[0]} in {self._expr.getPyExpr()[0]}:")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
         # always put a blank line after a for loop
         w.blank()
 
     def writets(self, w: FileWriter) -> None:
-        w.line0(f'for (let {self._assign.getTSExpr()[0]} of {self._expr.getTSExpr()[0]}) {{')
+        w.line0(
+            f"for (let {self._assign.getTSExpr()[0]} of {self._expr.getTSExpr()[0]}) {{"
+        )
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
-        w.line0(f'}}')
+        w.line0(f"}}")
         # always put a blank line after a for loop
         w.blank()
 
     def writephp(self, w: FileWriter) -> None:
-        w.line0(f'foreach ({self._expr.getPHPExpr()[0]} as {self._assign.getPHPExpr()[0]}) {{')
+        w.line0(
+            f"foreach ({self._expr.getPHPExpr()[0]} as {self._assign.getPHPExpr()[0]}) {{"
+        )
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
-        w.line0(f'}}')
+        w.line0(f"}}")
         # always put a blank line after a for loop
         w.blank()
 
@@ -759,21 +803,21 @@ class ReturnStatement(StatementWithNoImports):
 
     def writepy(self, w: FileWriter) -> None:
         if isinstance(self._expr, PanOmit):
-            w.line0('return')
+            w.line0("return")
         else:
-            w.line0('return ' + self._expr.getPyExpr()[0])
+            w.line0("return " + self._expr.getPyExpr()[0])
 
     def writets(self, w: FileWriter) -> None:
         if isinstance(self._expr, PanOmit):
-            w.line0('return;')
+            w.line0("return;")
         else:
-            w.line0('return ' + self._expr.getTSExpr()[0] + ';')
+            w.line0("return " + self._expr.getTSExpr()[0] + ";")
 
     def writephp(self, w: FileWriter) -> None:
         if isinstance(self._expr, PanOmit):
-            w.line0('return;')
+            w.line0("return;")
         else:
-            w.line0('return ' + self._expr.getPHPExpr()[0] + ';')
+            w.line0("return " + self._expr.getPHPExpr()[0] + ";")
 
 
 class ListAppendStatement(StatementWithNoImports):
@@ -792,8 +836,8 @@ class ListAppendStatement(StatementWithNoImports):
     def writephp(self, w: FileWriter) -> None:
         list_, prec = self._list.getPHPExpr()
         if prec.value >= PHPPrecedence.Arrow.value:
-            list_ = '(' + list_ + ')'
-        w.line0(list_ + '[] = ' + self._value.getPHPExpr()[0] + ';')
+            list_ = "(" + list_ + ")"
+        w.line0(list_ + "[] = " + self._value.getPHPExpr()[0] + ";")
 
 
 class AssignmentStatement(Statement):
@@ -833,11 +877,11 @@ class AssignmentStatement(Statement):
     def writepy(self, w: FileWriter) -> None:
         left = self._target.getPyExpr()[0]
         if self._declare and self._declaretype:
-            left += ': ' + self._target.getPanType().getQuotedPyType()
+            left += ": " + self._target.getPanType().getQuotedPyType()
         if self._expr is None:
             w.line0(left)
         else:
-            w.line0(f'{left} = {self._expr.getPyExpr()[0]}')
+            w.line0(f"{left} = {self._expr.getPyExpr()[0]}")
 
     def writets(self, w: FileWriter) -> None:
         left = self._target.getTSExpr()[0]
@@ -847,9 +891,9 @@ class AssignmentStatement(Statement):
                 left += ": " + self._target.getPanType().getTSType()[0]
 
         if self._expr is None:
-            w.line0(f'{left};')
+            w.line0(f"{left};")
         else:
-            w.line0(f'{left} = {self._expr.getTSExpr()[0]};')
+            w.line0(f"{left} = {self._expr.getTSExpr()[0]};")
 
     def writephp(self, w: FileWriter) -> None:
         if self._declare and self._declaretype:
@@ -860,7 +904,7 @@ class AssignmentStatement(Statement):
 
         # you can't just make a variable declaration in PHP
         assert self._expr is not None
-        w.line0(f'{left} = {self._expr.getPHPExpr()[0]};')
+        w.line0(f"{left} = {self._expr.getPHPExpr()[0]};")
 
 
 class DictBuilderStatement(Statement):
@@ -873,7 +917,9 @@ class DictBuilderStatement(Statement):
         assert isinstance(vartype, CrossDict)
         return cls(var, vartype.getKeyType(), vartype.getValueType())
 
-    def __init__(self, var: Union[str, PanVar], keytype: FlexiType, valtype: FlexiType) -> None:
+    def __init__(
+        self, var: Union[str, PanVar], keytype: FlexiType, valtype: FlexiType
+    ) -> None:
         super().__init__()
 
         keytype = unflex(keytype)
@@ -889,7 +935,7 @@ class DictBuilderStatement(Statement):
         self._keys: List[Tuple[str, bool]] = []
 
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
-        yield 'typing', None
+        yield "typing", None
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         return []
@@ -901,41 +947,37 @@ class DictBuilderStatement(Statement):
         self._keys.append((key, allowomit))
 
     def writepy(self, w: FileWriter) -> None:
-        inner = ', '.join([
-            f'{k!r}: {k}'
-            for k, allowomit in self._keys
-            if not allowomit
-        ])
+        inner = ", ".join(
+            [f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit]
+        )
 
         varstr = self._var.getPyExpr()[0]
 
-        w.line0(f'{varstr}: {self._type.getQuotedPyType()} = {{{inner}}}')
+        w.line0(f"{varstr}: {self._type.getQuotedPyType()} = {{{inner}}}")
 
         # now do the omittable args
         for k, allowomit in self._keys:
             if allowomit:
                 # FIXME: this isn't how we want to do omitted args - we should be doing ellipsis
                 expr = pannotomit(PanVar(k, None))
-                w.line0(f'if {expr.getPyExpr()[0]}:')
-                w.line1(f'{varstr}[{k!r}] = {k}')
+                w.line0(f"if {expr.getPyExpr()[0]}:")
+                w.line1(f"{varstr}[{k!r}] = {k}")
 
     def writets(self, w: FileWriter) -> None:
-        inner = ', '.join([
-            f'{k!r}: {k}'
-            for k, allowomit in self._keys
-            if not allowomit
-        ])
+        inner = ", ".join(
+            [f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit]
+        )
 
         varstr = self._var.getTSExpr()[0]
 
-        w.line0(f'let {varstr}: {self._type.getTSType()[0]} = {{{inner}}};')
+        w.line0(f"let {varstr}: {self._type.getTSType()[0]} = {{{inner}}};")
 
         # now do the omittable args
         for k, allowomit in self._keys:
             if allowomit:
                 w.line0(f'if (typeof {k} !== "undefined") {{')
-                w.line1(f'{varstr}[{k!r}] = {k};')
-                w.line0(f'}}')
+                w.line1(f"{varstr}[{k!r}] = {k};")
+                w.line0(f"}}")
 
     def writephp(self, w: FileWriter) -> None:
         # TODO: don't import this here
@@ -943,17 +985,15 @@ class DictBuilderStatement(Statement):
 
         phptype = self._type.getPHPTypes()[0]
         if phptype:
-            w.line0(f'/** @var {phptype} */')
+            w.line0(f"/** @var {phptype} */")
 
-        inner = ', '.join([
-            _phpstr(k) + ' => $' + k
-            for k, allowomit in self._keys
-            if not allowomit
-        ])
+        inner = ", ".join(
+            [_phpstr(k) + " => $" + k for k, allowomit in self._keys if not allowomit]
+        )
 
         varstr = self._var.getPHPExpr()[0]
 
-        w.line0(f'{varstr} = [{inner}];')
+        w.line0(f"{varstr} = [{inner}];")
 
         # now do the omittable args
         for k, allowomit in self._keys:
@@ -993,7 +1033,9 @@ class FunctionSpec(Statements):
             assert returntype == "is_constructor"
             self._rettype = None
         elif returntype == "is_constructor":
-            raise Exception("Using returntype 'is_constructor' when isconstructor is False")
+            raise Exception(
+                "Using returntype 'is_constructor' when isconstructor is False"
+            )
         elif returntype == "no_return":
             # function declaration should have typescript "void" or python "None"
             self._rettype = None
@@ -1031,8 +1073,8 @@ class FunctionSpec(Statements):
         overload = FunctionSpec(self._name, returntype)
         overload._ismethod = self._ismethod
         overload._isasync = self._isasync
-        overload._decorators_py.append('@typing.overload')
-        overload._statements.append(PanExprStatement(pyexpr('...')))
+        overload._decorators_py.append("@typing.overload")
+        overload._statements.append(PanExprStatement(pyexpr("...")))
 
         arglist = [
             (self._pargs, overload._pargs),
@@ -1101,7 +1143,7 @@ class FunctionSpec(Statements):
         allowomit: bool,
         nullable: bool,
     ) -> PanVar:
-        assert not len(self._overloads), 'Added an arg after an overload was defined'
+        assert not len(self._overloads), "Added an arg after an overload was defined"
 
         if nullable:
             crosstype = maybe(crosstype)
@@ -1128,38 +1170,38 @@ class FunctionSpec(Statements):
 
         # decorators
         if self._isstaticmethod:
-            w.line0('@staticmethod')
+            w.line0("@staticmethod")
 
         for dec in self._decorators_py:
             w.line0(dec)
         if self._isabstract:
-            w.line0('@abc.abstractmethod')
+            w.line0("@abc.abstractmethod")
 
         # header
-        w.line0(f'def {self._name}(')
+        w.line0(f"def {self._name}(")
 
         if self._ismethod and not self._isstaticmethod:
-            w.line1('self,')
+            w.line1("self,")
 
         for argname, crosstype, argdefault in self._pargs:
-            argstr = argname + ': ' + crosstype.getQuotedPyType()
+            argstr = argname + ": " + crosstype.getQuotedPyType()
             if argdefault is not None:
-                argstr += ' = ' + argdefault.getPyExpr()[0]
-            w.line1(argstr + ',')
+                argstr += " = " + argdefault.getPyExpr()[0]
+            w.line1(argstr + ",")
         if len(self._kwargs):
             # mark start of kwargs
-            w.line1('*,')
+            w.line1("*,")
         for argname, argtype, argdefault in self._kwargs:
             argstr = argname
-            argstr += ': ' + argtype.getQuotedPyType()
+            argstr += ": " + argtype.getQuotedPyType()
             if argdefault is not None:
-                argstr += ' = ' + argdefault.getPyExpr()[0]
-            w.line1(argstr + ',')
+                argstr += " = " + argdefault.getPyExpr()[0]
+            w.line1(argstr + ",")
 
         if self._rettype is None:
-            w.line0(f') -> None:')
+            w.line0(f") -> None:")
         else:
-            w.line0(f') -> {self._rettype.getQuotedPyType()}:')
+            w.line0(f") -> {self._rettype.getQuotedPyType()}:")
 
         if self._docstring:
             w.line1('"""')
@@ -1175,7 +1217,7 @@ class FunctionSpec(Statements):
             havebody = True
 
         if not havebody:
-            w.line1('pass')
+            w.line1("pass")
 
     def writets(self, w: FileWriter) -> None:
         modifiers: List[str] = []
@@ -1183,13 +1225,13 @@ class FunctionSpec(Statements):
         # TODO: do we need to write some imports?
         if self._isasync:
             assert not self._isconstructor, "async constructor not possible?"
-            modifiers.append('async')
+            modifiers.append("async")
 
         if self._isabstract:
-            modifiers.append('abstract')
+            modifiers.append("abstract")
 
         if self._isstaticmethod:
-            modifiers.append('static')
+            modifiers.append("static")
 
         # first write out overloads
         if self._overloads:
@@ -1200,22 +1242,22 @@ class FunctionSpec(Statements):
 
         if self._ismethod:
             if not len(modifiers):
-                modifiers.append('public')
+                modifiers.append("public")
         else:
-            modifiers.append('function')
+            modifiers.append("function")
 
-        name = 'constructor' if self._isconstructor else self._name
-        w.line0((' '.join(modifiers)) + ' ' + name + "(")
+        name = "constructor" if self._isconstructor else self._name
+        w.line0((" ".join(modifiers)) + " " + name + "(")
 
         if self._kwargs:
             raise NotSupportedError("TypeScript does not support kwargs")
 
         # header
         for argname, crosstype, argdefault in self._pargs:
-            argstr = argname + ': ' + crosstype.getTSType()[0]
+            argstr = argname + ": " + crosstype.getTSType()[0]
             if argdefault is not None:
-                argstr += ' = ' + argdefault.getTSExpr()[0]
-            w.line1(argstr + ',')
+                argstr += " = " + argdefault.getTSExpr()[0]
+            w.line1(argstr + ",")
 
         rettype: str = "void"
         if self._isconstructor:
@@ -1234,7 +1276,7 @@ class FunctionSpec(Statements):
             w.line0(f"): {rettype} {{" if rettype else ") {")
             for stmt in self._statements:
                 stmt.writets(w.with_more_indent())
-            w.line0('}')
+            w.line0("}")
 
     def writephp(self, w: FileWriter) -> None:
         modifiers: List[str] = []
@@ -1242,39 +1284,39 @@ class FunctionSpec(Statements):
         assert not self._isasync, "Async methods not possible for PHP"
 
         if self._isabstract:
-            modifiers.append('abstract')
+            modifiers.append("abstract")
 
         if self._isstaticmethod:
-            modifiers.append('static')
+            modifiers.append("static")
 
         # first write out overloads
         if self._overloads:
             raise NotSupportedError("PHP does not support overloads")
 
         if self._ismethod:
-            modifiers.append('public')
+            modifiers.append("public")
 
-        prefix = modifiers + ['function']
+        prefix = modifiers + ["function"]
 
-        name = '__construct' if self._isconstructor else self._name
-        w.line0((' '.join(prefix)) + ' ' + name + "(")
+        name = "__construct" if self._isconstructor else self._name
+        w.line0((" ".join(prefix)) + " " + name + "(")
 
         if len(self._kwargs):
             raise NotSupportedError("PHP does not support kwargs")
 
         # header
         argnum = 0
-        comma = ','
+        comma = ","
         for argname, crosstype, argdefault in self._pargs:
             argnum += 1
             if argnum == len(self._pargs):
-                comma = ''
-            argstr = '$' + argname
+                comma = ""
+            argstr = "$" + argname
             phptype = crosstype.getPHPTypes()[0]
             if phptype:
-                argstr = phptype + ' ' + argstr
+                argstr = phptype + " " + argstr
             if argdefault is not None:
-                argstr += ' = ' + argdefault.getPHPExpr()[0]
+                argstr += " = " + argdefault.getPHPExpr()[0]
             w.line1(argstr + comma)
 
         rettype: str = ""
@@ -1291,17 +1333,19 @@ class FunctionSpec(Statements):
             w.line0(f"){rettype} {{")
             for stmt in self._statements:
                 stmt.writephp(w.with_more_indent())
-            w.line0('}')
+            w.line0("}")
 
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
         yield from super().getImportsPy()
 
         if self._isabstract:
-            yield 'abc', None
+            yield "abc", None
         for stmt in self._statements:
             yield from stmt.getImportsPy()
 
-        crosstypes: List[CrossType] = [a[1] for a in itertools.chain(self._pargs, self._kwargs)]
+        crosstypes: List[CrossType] = [
+            a[1] for a in itertools.chain(self._pargs, self._kwargs)
+        ]
 
         if self._rettype is not None:
             crosstypes.append(self._rettype)
@@ -1314,7 +1358,7 @@ class FunctionSpec(Statements):
                     yield module, None
 
         if self._overloads:
-            yield 'typing', None
+            yield "typing", None
 
         for overload in self._overloads:
             yield from overload.getImportsPy()
@@ -1427,16 +1471,20 @@ class ClassSpec(Statement):
         elif realdefault is not None:
             self._initdefaults.append((name, realdefault))
 
-        self._properties.append(ClassProperty(
-            propname=name,
-            proptype=crosstype,
-            propdefault=realdefault,
-            tsobservable=tsobservable,
-            tsreadonly=tsreadonly,
-        ))
+        self._properties.append(
+            ClassProperty(
+                propname=name,
+                proptype=crosstype,
+                propdefault=realdefault,
+                tsobservable=tsobservable,
+                tsreadonly=tsreadonly,
+            )
+        )
         return PanProp(name, crosstype, None)
 
-    def _getInitSpec(self, lang: Literal["python", "typescript", "php"]) -> Optional[FunctionSpec]:
+    def _getInitSpec(
+        self, lang: Literal["python", "typescript", "php"]
+    ) -> Optional[FunctionSpec]:
         initdefaults = self._initdefaults
 
         if lang in ("typescript", "php"):
@@ -1458,20 +1506,24 @@ class ClassSpec(Statement):
             initspec.alsoAssign(PanProp(name, CrossAny(), None), PanVar(name, None))
 
         if self._bases and lang == "python":
-            initspec.addPositionalArg('*args', CrossAny())
-            initspec.addPositionalArg('**kwargs', CrossAny())
+            initspec.addPositionalArg("*args", CrossAny())
+            initspec.addPositionalArg("**kwargs", CrossAny())
 
         # also call super's init
         if self._bases:
-            initspec.also(HardCodedStatement(
-                python='super().__init__(*args, **kwargs)',
-                typescript='super();',
-                php='parent::__construct();',
-            ))
+            initspec.also(
+                HardCodedStatement(
+                    python="super().__init__(*args, **kwargs)",
+                    typescript="super();",
+                    php="parent::__construct();",
+                )
+            )
         elif self._tsbase and lang == "typescript":
-            initspec.also(HardCodedStatement(
-                typescript='super();',
-            ))
+            initspec.also(
+                HardCodedStatement(
+                    typescript="super();",
+                )
+            )
 
         # do we need positional args for any of the properties?
         for name, default in initdefaults:
@@ -1488,9 +1540,9 @@ class ClassSpec(Statement):
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
         yield from self._importspy
         if self._isabstract:
-            yield 'abc', None
+            yield "abc", None
         if self._isdataclass:
-            yield 'dataclasses', None
+            yield "dataclasses", None
         constructor = self._getInitSpec("python")
         if constructor:
             yield from constructor.getImportsPy()
@@ -1502,7 +1554,7 @@ class ClassSpec(Statement):
 
         for prop in self._properties:
             if prop.tsobservable:
-                yield 'mobx', ['observable']
+                yield "mobx", ["observable"]
                 break
         constructor = self._getInitSpec("typescript")
         if constructor:
@@ -1528,14 +1580,14 @@ class ClassSpec(Statement):
 
         # write out class header
         if self._isabstract:
-            bases.append('abc.ABC')
+            bases.append("abc.ABC")
         if self._isdataclass:
-            w.line0('@dataclasses.dataclass')
+            w.line0("@dataclasses.dataclass")
 
-        parents = ', '.join(bases)
+        parents = ", ".join(bases)
         if parents:
-            parents = '(' + parents + ')'
-        w.line0(f'class {self._name}{parents}:')
+            parents = "(" + parents + ")"
+        w.line0(f"class {self._name}{parents}:")
         if self._docstring:
             w.line1('"""')
             for docline in self._docstring:
@@ -1546,7 +1598,7 @@ class ClassSpec(Statement):
 
         # first write out properties
         for prop in self._properties:
-            w.line1(f'{prop.propname}: {prop.proptype.getQuotedPyType()}')
+            w.line1(f"{prop.propname}: {prop.proptype.getQuotedPyType()}")
         if self._properties:
             w.blank()
             havebody = True
@@ -1565,21 +1617,21 @@ class ClassSpec(Statement):
             havebody = True
 
         for comment in self._remarks:
-            w.line1('# ' + comment)
+            w.line1("# " + comment)
             w.blank()
 
         if not havebody:
-            w.line1('pass')
+            w.line1("pass")
 
     def writets(self, w: FileWriter) -> None:
-        prefix = ''
+        prefix = ""
         if self._tsexport:
-            prefix = 'export '
+            prefix = "export "
 
         if self._isabstract:
-            prefix += 'abstract '
+            prefix += "abstract "
 
-        extends = ''
+        extends = ""
         if self._tsbase:
             extends = f" extends {self._tsbase}"
 
@@ -1589,7 +1641,7 @@ class ClassSpec(Statement):
 
         if self._docstring:
             for docline in self._docstring:
-                w.line1('// ' + docline.strip())
+                w.line1("// " + docline.strip())
             needemptyline = True
 
         # first write out properties
@@ -1598,18 +1650,18 @@ class ClassSpec(Statement):
         for prop in self._properties:
             if prop.tsobservable:
                 w.blank()
-                w.line1(f'@observable')
+                w.line1(f"@observable")
             if prop.tsreadonly:
-                prefix = 'readonly '
+                prefix = "readonly "
             else:
-                prefix = 'public '
-            assign = ''
+                prefix = "public "
+            assign = ""
 
             # only assign values in the class body if the value is a literal
             if prop.propdefault and isinstance(prop.propdefault, PanLiteral):
-                assign = ' = ' + prop.propdefault.getTSExpr()[0]
+                assign = " = " + prop.propdefault.getTSExpr()[0]
 
-            w.line1(f'{prefix}{prop.propname}: {prop.proptype.getTSType()[0]}{assign};')
+            w.line1(f"{prefix}{prop.propname}: {prop.proptype.getTSType()[0]}{assign};")
             needemptyline = True
 
         # add an __init__() method to set default values
@@ -1628,27 +1680,27 @@ class ClassSpec(Statement):
             needemptyline = True
 
         for comment in self._remarks:
-            w.line1('// ' + comment)
+            w.line1("// " + comment)
             w.blank()
 
         w.line0("}")
 
     def writephp(self, w: FileWriter) -> None:
-        prefix = ''
+        prefix = ""
 
         if self._isabstract:
-            prefix += 'abstract '
+            prefix += "abstract "
 
         if self._docstring:
-            w.line0('/**')
+            w.line0("/**")
             for docline in self._docstring:
-                w.line0(' * ' + docline.strip())
-            w.line0(' */')
+                w.line0(" * " + docline.strip())
+            w.line0(" */")
 
-        extends = ''
+        extends = ""
         if len(self._bases):
             assert len(self._bases) <= 1
-            extends = ' extends ' + self._bases[0]
+            extends = " extends " + self._bases[0]
 
         w.line0(f"{prefix}class {self._name}{extends} {{")
 
@@ -1656,15 +1708,15 @@ class ClassSpec(Statement):
 
         # first write out properties
         for prop in self._properties:
-            assign = ''
+            assign = ""
 
             # only assign values in the class body if the value is a literal
             if prop.propdefault and isinstance(prop.propdefault, PanLiteral):
-                assign = ' = ' + prop.propdefault.getPHPExpr()[0]
+                assign = " = " + prop.propdefault.getPHPExpr()[0]
 
             phptypes = prop.proptype.getPHPTypes()
-            w.line1(f'/** @var {phptypes[1]} */')
-            w.line1(f'public ${prop.propname}{assign};')
+            w.line1(f"/** @var {phptypes[1]} */")
+            w.line1(f"public ${prop.propname}{assign};")
             needemptyline = True
 
         # add an __init__() method to set default values
@@ -1684,7 +1736,7 @@ class ClassSpec(Statement):
 
         if needemptyline:
             for comment in self._remarks:
-                w.line1('// ' + comment)
+                w.line1("// " + comment)
                 w.blank()
 
         w.line0("}")
@@ -1692,11 +1744,7 @@ class ClassSpec(Statement):
 
 class InterfaceSpec(Statement):
     def __init__(
-        self,
-        name: str,
-        *,
-        tsexport: bool = False,
-        appendto: Statements = None
+        self, name: str, *, tsexport: bool = False, appendto: Statements = None
     ) -> None:
         super().__init__()
 
@@ -1737,7 +1785,7 @@ class InterfaceSpec(Statement):
         raise NotImplementedError("InterfaceSpec can't generate python code")  # noqa
 
     def writets(self, w: FileWriter) -> None:
-        export = 'export ' if self._tsexport else ''
+        export = "export " if self._tsexport else ""
         w.line0(f"{export}interface {self._name} {{")
         for propname, proptype in self._properties:
             w.line1(f"{propname}: {proptype.getTSType()[0]};")
