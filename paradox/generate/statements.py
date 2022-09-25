@@ -1010,7 +1010,7 @@ class FunctionSpec(Statements):
             "__init__",
             "is_constructor",
             isconstructor=True,
-            ismethod=True,
+            _ismethod=True,
         )
 
     def __init__(
@@ -1018,12 +1018,12 @@ class FunctionSpec(Statements):
         name: str,
         returntype: Union[FlexiType, Literal["no_return", "is_constructor"]],
         *,
-        isabstract: bool = False,
         isconstructor: bool = False,
-        ismethod: bool = False,
-        isstaticmethod: bool = False,
         isasync: bool = False,
         docstring: List[str] = None,
+        _isabstract: bool = False,
+        _ismethod: bool = False,
+        _isstaticmethod: bool = False,
     ) -> None:
         super().__init__()
 
@@ -1050,10 +1050,10 @@ class FunctionSpec(Statements):
         self._overloads: List[FunctionSpec] = []
         self._decorators_py: List[str] = []
         self._decorators_ts: List[str] = []
-        self._isabstract: bool = isabstract
+        self._isabstract: bool = _isabstract
         self._isconstructor: bool = isconstructor
-        self._ismethod: bool = ismethod
-        self._isstaticmethod: bool = isstaticmethod
+        self._ismethod: bool = _ismethod
+        self._isstaticmethod: bool = _isstaticmethod
         self._isasync: bool = isasync
         self._docstring: Optional[List[str]] = docstring
 
@@ -1459,9 +1459,9 @@ class ClassSpec(Statement):
         spec = FunctionSpec(
             name,
             returntype,
-            isabstract=isabstract,
-            ismethod=True,
-            isstaticmethod=isstaticmethod,
+            _isabstract=isabstract,
+            _ismethod=True,
+            _isstaticmethod=isstaticmethod,
             isasync=isasync,
             docstring=docstring,
         )
