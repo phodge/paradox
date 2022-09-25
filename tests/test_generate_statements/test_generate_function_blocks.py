@@ -46,10 +46,7 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
 
     if LANG == "php":
         # TODO: docstring is not implemented for PHP yet
-        assert (
-            source_code
-            == dedent(
-                """
+        expected = """
             <?php
 
             function int_identity(
@@ -68,13 +65,8 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
             ) {
             }
             """
-            ).lstrip()
-        )
     elif LANG == "python":
-        assert (
-            source_code
-            == dedent(
-                '''
+        expected = '''
             import typing
 
 
@@ -98,15 +90,10 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
             ) -> typing.Any:
                 pass
             '''
-            ).lstrip()
-        )
     else:
         assert LANG == "typescript"
         # TODO: docstring is not implemented for typescript yet
-        assert (
-            source_code
-            == dedent(
-                """
+        expected = """
             function int_identity(
                 num: number,
             ): number {
@@ -123,8 +110,7 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
             ): any {
             }
             """
-            ).lstrip()
-        )
+    assert source_code == dedent(expected).lstrip()
 
 
 def test_FunctionSpec_omittable_args(LANG: SupportedLang) -> None:
