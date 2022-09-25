@@ -1034,8 +1034,6 @@ class FunctionSpec(Statements):
             # function declaration should have typescript "void" or python "None"
             self._rettype = None
         else:
-            # using type: ignore because we know here that returntype must be a FlexiType by this
-            # point
             self._rettype = unflex(returntype)
 
         # list((name, type, default)))
@@ -1369,8 +1367,6 @@ class FunctionSpec(Statements):
 
         for overload in self._overloads:
             yield from overload.getImportsPy()
-
-        # XXX: also need types out of the arg types / return types
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         yield from super().getImportsTS()
