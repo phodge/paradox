@@ -1169,7 +1169,7 @@ class FunctionSpec(Statements):
 
         # decorators
         if self._isstaticmethod:
-            w.line0("@staticmethod")
+            w.line0("@classmethod")
 
         for dec in self._decorators_py:
             w.line0(dec)
@@ -1179,8 +1179,8 @@ class FunctionSpec(Statements):
         # header
         w.line0(f"def {self._name}(")
 
-        if self._ismethod and not self._isstaticmethod:
-            w.line1("self,")
+        if self._ismethod:
+            w.line1("class_," if self._isstaticmethod else "self,")
 
         for argname, crosstype, argdefault in self._pargs:
             argstr = argname + ": " + crosstype.getQuotedPyType()
