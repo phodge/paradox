@@ -138,6 +138,7 @@ def test_FunctionSpec_omittable_args(LANG: SupportedLang) -> None:
     if LANG == "python":
         expected = """
             import builtins
+            import typing
 
 
             def omittable(

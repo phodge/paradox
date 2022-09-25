@@ -1003,45 +1003,37 @@ class DictBuilderStatement(Statement):
 
 class FunctionSpec(Statements):
     _rettype: Optional[CrossType]
+    _isconstructor: bool = False
 
     @classmethod
-    def getconstructor(cls) -> "FunctionSpec":
-        return cls(
+    def _getconstructor(cls) -> "FunctionSpec":
+        funcspec = cls(
             "__init__",
-            "is_constructor",
-            isconstructor=True,
-            ismethod=True,
+            "no_return",
+            _ismethod=True,
         )
+        funcspec._isconstructor = True
+        return funcspec
 
     def __init__(
         self,
         name: str,
-        returntype: Union[FlexiType, Literal["no_return", "is_constructor"]],
+        returntype: Union[FlexiType, Literal["no_return"]],
         *,
-        isabstract: bool = False,
-        isconstructor: bool = False,
-        ismethod: bool = False,
-        isstaticmethod: bool = False,
         isasync: bool = False,
         docstring: List[str] = None,
+        _isabstract: bool = False,
+        _ismethod: bool = False,
+        _isstaticmethod: bool = False,
     ) -> None:
         super().__init__()
 
         self._name = name
 
-        if isconstructor:
-            assert returntype == "is_constructor"
-            self._rettype = None
-        elif returntype == "is_constructor":
-            raise Exception(
-                "Using returntype 'is_constructor' when isconstructor is False"
-            )
-        elif returntype == "no_return":
+        if returntype == "no_return":
             # function declaration should have typescript "void" or python "None"
             self._rettype = None
         else:
-            # using type: ignore because we know here that returntype must be a FlexiType by this
-            # point
             self._rettype = unflex(returntype)
 
         # list((name, type, default)))
@@ -1050,10 +1042,9 @@ class FunctionSpec(Statements):
         self._overloads: List[FunctionSpec] = []
         self._decorators_py: List[str] = []
         self._decorators_ts: List[str] = []
-        self._isabstract: bool = isabstract
-        self._isconstructor: bool = isconstructor
-        self._ismethod: bool = ismethod
-        self._isstaticmethod: bool = isstaticmethod
+        self._isabstract: bool = _isabstract
+        self._ismethod: bool = _ismethod
+        self._isstaticmethod: bool = _isstaticmethod
         self._isasync: bool = isasync
         self._docstring: Optional[List[str]] = docstring
 
@@ -1169,7 +1160,7 @@ class FunctionSpec(Statements):
 
         # decorators
         if self._isstaticmethod:
-            w.line0("@staticmethod")
+            w.line0("@classmethod")
 
         for dec in self._decorators_py:
             w.line0(dec)
@@ -1179,8 +1170,8 @@ class FunctionSpec(Statements):
         # header
         w.line0(f"def {self._name}(")
 
-        if self._ismethod and not self._isstaticmethod:
-            w.line1("self,")
+        if self._ismethod:
+            w.line1("class_," if self._isstaticmethod else "self,")
 
         for argname, crosstype, argdefault in self._pargs:
             argstr = argname + ": " + crosstype.getQuotedPyType()
@@ -1214,9 +1205,12 @@ class FunctionSpec(Statements):
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
             havebody = True
+            assert (
+                not self._isabstract
+            ), "Abstract FunctionSpec must not have any statements"
 
         if not havebody:
-            w.line1("pass")
+            w.line1("..." if self._isabstract else "pass")
 
     def writets(self, w: FileWriter) -> None:
         if self._docstring:
@@ -1286,7 +1280,7 @@ class FunctionSpec(Statements):
     def writephp(self, w: FileWriter) -> None:
         modifiers: List[str] = []
 
-        assert not self._isasync, "Async methods not possible for PHP"
+        assert not self._isasync, "PHP does not support async functions"
 
         if self._docstring:
             w.line0("/**")
@@ -1374,8 +1368,6 @@ class FunctionSpec(Statements):
         for overload in self._overloads:
             yield from overload.getImportsPy()
 
-        # XXX: also need types out of the arg types / return types
-
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         yield from super().getImportsTS()
 
@@ -1413,7 +1405,6 @@ class ClassSpec(Statement):
         isdataclass: bool = False,
         tsexport: bool = False,
         tsbase: str = None,
-        appendto: Statements = None,
     ) -> None:
         super().__init__()
 
@@ -1436,9 +1427,6 @@ class ClassSpec(Statement):
         self._importsts = []
         self._importsphp = []
 
-        if appendto:
-            appendto.also(self)
-
     @property
     def classname(self) -> str:
         return self._name
@@ -1456,9 +1444,9 @@ class ClassSpec(Statement):
         spec = FunctionSpec(
             name,
             returntype,
-            isabstract=isabstract,
-            ismethod=True,
-            isstaticmethod=isstaticmethod,
+            _isabstract=isabstract,
+            _ismethod=True,
+            _isstaticmethod=isstaticmethod,
             isasync=isasync,
             docstring=docstring,
         )
@@ -1507,7 +1495,7 @@ class ClassSpec(Statement):
         if not (self._initargs or initdefaults):
             return None
 
-        initspec = FunctionSpec.getconstructor()
+        initspec = FunctionSpec._getconstructor()
         for name, crosstype, pandefault in self._initargs:
             initspec.addPositionalArg(
                 name,
@@ -1754,16 +1742,13 @@ class ClassSpec(Statement):
 
 class InterfaceSpec(Statement):
     def __init__(
-        self, name: str, *, tsexport: bool = False, appendto: Statements = None
+        self, name: str, *, tsexport: bool = False,
     ) -> None:
         super().__init__()
 
         self._name = name
         self._properties: List[Tuple[str, CrossType]] = []
         self._tsexport: bool = tsexport
-
-        if appendto:
-            appendto.also(self)
 
     def addProperty(
         self,
