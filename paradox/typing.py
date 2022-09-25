@@ -355,6 +355,9 @@ class CrossUnion(CrossType):
         for inner in self._inner:
             yield from inner.getPyImports()
 
+        # we need 'Union' for our own typing.Union
+        yield "typing", None
+
     def alsoWith(self, *other: CrossType) -> "CrossUnion":
         """Return a new CrossUnion that also includes `other`."""
         return CrossUnion(self._inner + list(other))
