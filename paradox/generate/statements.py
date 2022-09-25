@@ -1214,9 +1214,12 @@ class FunctionSpec(Statements):
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
             havebody = True
+            assert (
+                not self._isabstract
+            ), "Abstract FunctionSpec must not have any statements"
 
         if not havebody:
-            w.line1("pass")
+            w.line1("..." if self._isabstract else "pass")
 
     def writets(self, w: FileWriter) -> None:
         if self._docstring:
