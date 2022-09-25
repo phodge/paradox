@@ -1742,7 +1742,10 @@ class ClassSpec(Statement):
 
 class InterfaceSpec(Statement):
     def __init__(
-        self, name: str, *, tsexport: bool = False,
+        self,
+        name: str,
+        *,
+        tsexport: bool = False,
     ) -> None:
         super().__init__()
 
