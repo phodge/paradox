@@ -1003,22 +1003,23 @@ class DictBuilderStatement(Statement):
 
 class FunctionSpec(Statements):
     _rettype: Optional[CrossType]
+    _isconstructor: bool = False
 
     @classmethod
-    def getconstructor(cls) -> "FunctionSpec":
-        return cls(
+    def _getconstructor(cls) -> "FunctionSpec":
+        funcspec = cls(
             "__init__",
-            "is_constructor",
-            isconstructor=True,
+            "no_return",
             _ismethod=True,
         )
+        funcspec._isconstructor = True
+        return funcspec
 
     def __init__(
         self,
         name: str,
-        returntype: Union[FlexiType, Literal["no_return", "is_constructor"]],
+        returntype: Union[FlexiType, Literal["no_return"]],
         *,
-        isconstructor: bool = False,
         isasync: bool = False,
         docstring: List[str] = None,
         _isabstract: bool = False,
@@ -1029,14 +1030,7 @@ class FunctionSpec(Statements):
 
         self._name = name
 
-        if isconstructor:
-            assert returntype == "is_constructor"
-            self._rettype = None
-        elif returntype == "is_constructor":
-            raise Exception(
-                "Using returntype 'is_constructor' when isconstructor is False"
-            )
-        elif returntype == "no_return":
+        if returntype == "no_return":
             # function declaration should have typescript "void" or python "None"
             self._rettype = None
         else:
@@ -1051,7 +1045,6 @@ class FunctionSpec(Statements):
         self._decorators_py: List[str] = []
         self._decorators_ts: List[str] = []
         self._isabstract: bool = _isabstract
-        self._isconstructor: bool = isconstructor
         self._ismethod: bool = _ismethod
         self._isstaticmethod: bool = _isstaticmethod
         self._isasync: bool = isasync
@@ -1510,7 +1503,7 @@ class ClassSpec(Statement):
         if not (self._initargs or initdefaults):
             return None
 
-        initspec = FunctionSpec.getconstructor()
+        initspec = FunctionSpec._getconstructor()
         for name, crosstype, pandefault in self._initargs:
             initspec.addPositionalArg(
                 name,
