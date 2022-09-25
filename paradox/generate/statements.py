@@ -1055,7 +1055,6 @@ class FunctionSpec(Statements):
         self._ismethod: bool = ismethod
         self._isstaticmethod: bool = isstaticmethod
         self._isasync: bool = isasync
-        # TODO: add support for this in PHP/Typescript also
         self._docstring: Optional[List[str]] = docstring
 
     def addDecoratorPy(self, decoration: str) -> None:
@@ -1203,14 +1202,14 @@ class FunctionSpec(Statements):
         else:
             w.line0(f") -> {self._rettype.getQuotedPyType()}:")
 
+        havebody = False
+
         if self._docstring:
             w.line1('"""')
             for docline in self._docstring:
-                w.line1(docline.strip())
+                w.line1(docline)
             w.line1('"""')
             havebody = True
-
-        havebody = False
 
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
@@ -1220,6 +1219,12 @@ class FunctionSpec(Statements):
             w.line1("pass")
 
     def writets(self, w: FileWriter) -> None:
+        if self._docstring:
+            w.line0("/**")
+            for docline in self._docstring:
+                w.line0(" * " + docline)
+            w.line0(" */")
+
         modifiers: List[str] = []
 
         # TODO: do we need to write some imports?
@@ -1282,6 +1287,12 @@ class FunctionSpec(Statements):
         modifiers: List[str] = []
 
         assert not self._isasync, "Async methods not possible for PHP"
+
+        if self._docstring:
+            w.line0("/**")
+            for docline in self._docstring:
+                w.line0(" * " + docline)
+            w.line0(" */")
 
         if self._isabstract:
             modifiers.append("abstract")
@@ -1624,6 +1635,12 @@ class ClassSpec(Statement):
             w.line1("pass")
 
     def writets(self, w: FileWriter) -> None:
+        if self._docstring:
+            w.line0("/**")
+            for docline in self._docstring:
+                w.line0(" * " + docline)
+            w.line0(" */")
+
         prefix = ""
         if self._tsexport:
             prefix = "export "
@@ -1639,14 +1656,7 @@ class ClassSpec(Statement):
 
         needemptyline = False
 
-        if self._docstring:
-            for docline in self._docstring:
-                w.line1("// " + docline.strip())
-            needemptyline = True
-
         # first write out properties
-        if self._properties and needemptyline:
-            w.blank()
         for prop in self._properties:
             if prop.tsobservable:
                 w.blank()

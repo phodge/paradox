@@ -45,10 +45,13 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
     source_code = s.get_source_code(lang=LANG)
 
     if LANG == "php":
-        # TODO: docstring is not implemented for PHP yet
         expected = """
             <?php
 
+            /**
+             * Returns the given input
+             * Param `num`: an integer
+             */
             function int_identity(
                 int $num
             ): int {
@@ -92,8 +95,11 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
             '''
     else:
         assert LANG == "typescript"
-        # TODO: docstring is not implemented for typescript yet
         expected = """
+            /**
+             * Returns the given input
+             * Param `num`: an integer
+             */
             function int_identity(
                 num: number,
             ): number {
