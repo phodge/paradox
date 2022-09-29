@@ -12,6 +12,7 @@ class CrossType(abc.ABC):
     def __init__(self) -> None:
         self._pythonotherimports = defaultdict(list)
 
+    # TODO: refactor this to return a list of ImportSpecPy
     def getPyImports(self) -> Iterator[Tuple[str, Optional[str]]]:
         for module, names in self._pythonotherimports.items():
             for maybename in names:
