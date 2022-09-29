@@ -3,8 +3,8 @@ from textwrap import dedent
 import pytest
 
 from _paradoxtest import SupportedLang
-from paradox.interfaces import NotSupportedError
 from paradox.generate.statements import InterfaceSpec
+from paradox.interfaces import NotSupportedError
 from paradox.output import Script
 from paradox.typing import CrossBool
 
