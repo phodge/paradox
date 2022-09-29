@@ -167,6 +167,8 @@ class Statements(Statement, AcceptsStatements):
     def alsoAppend(self, list_: Pannable, value: Pannable) -> None:
         self._statements.append(ListAppendStatement(pan(list_), pan(value)))
 
+    # TODO: this should accept language-specific constructors so that clients don't need to insert
+    # the a ctor that matches the target language
     def alsoRaise(
         self,
         ctor: str = None,
@@ -391,6 +393,8 @@ class RawTypescript(StatementWithNoImports):
         raise Exception("Not implemented in PHP")
 
 
+# TODO: this should accept language-specific constructors so that clients don't
+# need to insert the a ctor that matches the target language
 class SimpleRaise(StatementWithNoImports):
     _ctor: Optional[str]
 
