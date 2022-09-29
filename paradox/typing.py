@@ -1,6 +1,8 @@
 import abc
 from collections import defaultdict
-from typing import Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Type, Union
+
+from paradox.interfaces import ImportSpecPHP
 
 
 class CrossType(abc.ABC):
@@ -14,6 +16,9 @@ class CrossType(abc.ABC):
         for module, names in self._pythonotherimports.items():
             for maybename in names:
                 yield module, maybename
+
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
+        return []
 
     @abc.abstractmethod
     def getPyType(self) -> Tuple[str, bool]:

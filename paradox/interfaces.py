@@ -136,7 +136,9 @@ class WantsImports(abc.ABC):
 
     @abc.abstractmethod
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
-        ...
+        # XXX: we need to return an iterable here so that subclasses can use
+        #   yield from super().getImportsPHP()
+        return []
 
 
 class DefinesCustomTypes(abc.ABC):
