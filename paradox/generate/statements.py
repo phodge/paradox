@@ -1770,7 +1770,9 @@ class InterfaceSpec(Statement):
                     yield module, None
 
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
-        raise NotImplementedError("TODO: not implemented")
+        yield from super().getImportsPHP()
+        for _, crosstype in self._properties:
+            yield from crosstype.getImportsPHP()
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         for name, crosstype in self._properties:
@@ -1780,7 +1782,7 @@ class InterfaceSpec(Statement):
         return []
 
     def writepy(self, w: FileWriter) -> None:
-        raise NotImplementedError("InterfaceSpec can't generate python code")  # noqa
+        raise NotSupportedError("InterfaceSpec can't generate python code")
 
     def writets(self, w: FileWriter) -> None:
         export = "export " if self._tsexport else ""
@@ -1790,4 +1792,7 @@ class InterfaceSpec(Statement):
         w.line0(f"}}")
 
     def writephp(self, w: FileWriter) -> None:
-        raise NotImplementedError("TODO: not implemented")
+        w.line0(f"interface {self._name} {{")
+        # FIXME: PHP doesn't support properties in interfaces, so maybe this
+        # feature isn't so useful in its current form
+        w.line0(f"}}")
