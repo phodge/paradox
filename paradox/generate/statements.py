@@ -369,7 +369,7 @@ class HardCodedStatement(StatementWithNoImports):
 
 
 class RawTypescript(StatementWithNoImports):
-    """Used for simple statements that only need to work in Python."""
+    # TODO: deprecate this in favour of HardCodedStatement
 
     def __init__(self) -> None:
         super().__init__()
