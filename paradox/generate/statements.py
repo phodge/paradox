@@ -23,6 +23,7 @@ from paradox.interfaces import (
     AcceptsStatements,
     AlsoParam,
     DefinesCustomTypes,
+    ImplementationMissing,
     ImportSpecPHP,
     ImportSpecPy,
     ImportSpecTS,
@@ -330,28 +331,41 @@ class HardCodedStatement(StatementWithNoImports):
 
     def __init__(
         self,
-        python: str = None,
-        typescript: str = None,
-        php: str = None,
+        *,
+        python: "Union[str, None, builtins.ellipsis]" = ...,
+        typescript: "Union[str, None, builtins.ellipsis]" = ...,
+        php: "Union[str, None, builtins.ellipsis]" = ...,
     ) -> None:
         self._python = python
         self._typescript = typescript
         self._php = php
 
     def writets(self, w: FileWriter) -> None:
-        if self._typescript is None:
-            raise Exception("Not implemented in TS")
-        w.line0(self._typescript)
+        if self._typescript is ...:
+            raise ImplementationMissing(
+                "HardCodedStatement was not given a TypeScript implementation"
+            )
+        if self._typescript is not None:
+            # XXX: mypy doesn't realise that self._typescript cannot be ...
+            w.line0(self._typescript)  # type: ignore
 
     def writepy(self, w: FileWriter) -> None:
-        if self._python is None:
-            raise Exception("Not implemented in Python")
-        w.line0(self._python)
+        if self._python is ...:
+            raise ImplementationMissing(
+                "HardCodedStatement was not given a Python implementation"
+            )
+        if self._python is not None:
+            # XXX: mypy doesn't realise that self._python cannot be ...
+            w.line0(self._python)  # type: ignore
 
     def writephp(self, w: FileWriter) -> None:
-        if self._php is None:
-            raise Exception("Not implemented in PHP")
-        w.line0(self._php)
+        if self._php is ...:
+            raise ImplementationMissing(
+                "HardCodedStatement was not given a PHP implementation"
+            )
+        if self._php is not None:
+            # XXX: mypy doesn't realise that self._php cannot be ...
+            w.line0(self._php)  # type: ignore
 
 
 class RawTypescript(StatementWithNoImports):

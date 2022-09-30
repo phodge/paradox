@@ -37,6 +37,12 @@ class NotSupportedError(NotImplementedError):
     """When you attempt to use a feature that is not supported by the target language."""
 
 
+class ImplementationMissing(Exception):
+    """
+    Raised by hard-coded statement or expression when requested language implementation is missing.
+    """
+
+
 AlsoParam = TypeVar("AlsoParam", bound="Union[Statement, PanExpr]")
 
 
