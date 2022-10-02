@@ -93,9 +93,7 @@ def _wrapdot(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]])
     return code
 
 
-def _wrapmult(
-    pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]
-) -> str:
+def _wrapmult(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]) -> str:
     code, prec = pair
     if isinstance(prec, PyPrecedence):
         if prec.value >= PyPrecedence.MultDiv.value:
@@ -317,17 +315,13 @@ class PanDict(PanExpr):
         return code, TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        inner = [
-            _phpstr(k) + " => " + v.getPHPExpr()[0] for k, v in self._pairs.items()
-        ]
+        inner = [_phpstr(k) + " => " + v.getPHPExpr()[0] for k, v in self._pairs.items()]
         code = "[" + ", ".join(inner) + "]"
         return code, PHPPrecedence.Literal
 
     def addPair(self, key: PanExpr, val: PanExpr) -> None:
         assert isinstance(key, PanLiteral), "PanDict currently only supports str keys"
-        assert isinstance(
-            key.getPanType(), CrossStr
-        ), "PanDict currently only supports str keys"
+        assert isinstance(key.getPanType(), CrossStr), "PanDict currently only supports str keys"
         realkey = key.getRawStr()
         assert realkey not in self._pairs
         self._pairs[realkey] = val
@@ -677,9 +671,7 @@ class PanStringBuilder(PanExpr):
 
 
 class PanTSOnly(PanExpr):
-    def __init__(
-        self, code: str, precedence: TSPrecedence = TSPrecedence.MultDiv
-    ) -> None:
+    def __init__(self, code: str, precedence: TSPrecedence = TSPrecedence.MultDiv) -> None:
         self._code = code
         self._prec = precedence
 
@@ -697,9 +689,7 @@ class PanTSOnly(PanExpr):
 
 
 class PanPyOnly(PanExpr):
-    def __init__(
-        self, code: str, precedence: PyPrecedence = PyPrecedence.MultDiv
-    ) -> None:
+    def __init__(self, code: str, precedence: PyPrecedence = PyPrecedence.MultDiv) -> None:
         self._code = code
         self._prec = precedence
 
@@ -710,20 +700,14 @@ class PanPyOnly(PanExpr):
         return self._code, self._prec
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
-        raise Exception(
-            f"PanPyOnly('{self._code}') is unable to produce a TS expression"
-        )
+        raise Exception(f"PanPyOnly('{self._code}') is unable to produce a TS expression")
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        raise Exception(
-            f"PanPyOnly('{self._code}') is unable to produce a PHP expression"
-        )
+        raise Exception(f"PanPyOnly('{self._code}') is unable to produce a PHP expression")
 
 
 class PanPHPOnly(PanExpr):
-    def __init__(
-        self, code: str, precedence: PHPPrecedence = PHPPrecedence.MultDiv
-    ) -> None:
+    def __init__(self, code: str, precedence: PHPPrecedence = PHPPrecedence.MultDiv) -> None:
         self._code = code
         self._prec = precedence
 
@@ -741,9 +725,7 @@ class PanPHPOnly(PanExpr):
 
 
 class PanAndOr(PanExpr):
-    def __init__(
-        self, operation: Literal["AND", "OR"], arguments: List[PanExpr]
-    ) -> None:
+    def __init__(self, operation: Literal["AND", "OR"], arguments: List[PanExpr]) -> None:
         super().__init__()
 
         self._operation = operation
@@ -869,9 +851,7 @@ class PanIsNullExpr(PanExpr):
 
 
 class PanCompare(PanExpr):
-    def __init__(
-        self, operation: Literal["===", "<", ">"], arg1: PanExpr, arg2: PanExpr
-    ) -> None:
+    def __init__(self, operation: Literal["===", "<", ">"], arg1: PanExpr, arg2: PanExpr) -> None:
         super().__init__()
 
         self._operation = operation
@@ -980,9 +960,7 @@ def pan(value: Pannable) -> PanExpr:
 def panlist(values: Iterable[Pannable], innertype: CrossType = None) -> PanList:
     resolved: List[PanExpr] = [pan(v) for v in values]
     if innertype is None:
-        assert len(
-            resolved
-        ), "If no values are provided to panlist(), a type must be specified"
+        assert len(resolved), "If no values are provided to panlist(), a type must be specified"
         innertype = resolved[0].getPanType()
 
     for v in resolved:
@@ -995,9 +973,7 @@ def panlist(values: Iterable[Pannable], innertype: CrossType = None) -> PanList:
 def pandict(pairs: Mapping[str, Pannable], valuetype: CrossType = None) -> PanDict:
     resolved: Dict[str, PanExpr] = {k: pan(v) for k, v in pairs.items()}
     if valuetype is None:
-        assert len(
-            resolved
-        ), "If no pairs are provided to pandict(), a type must be specified"
+        assert len(resolved), "If no pairs are provided to pandict(), a type must be specified"
         valuetype = resolved[list(resolved.keys())[0]].getPanType()
 
     for k, v in resolved.items():
