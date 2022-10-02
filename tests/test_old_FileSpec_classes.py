@@ -119,9 +119,7 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
     with fp.contents.withCond(pan(False)) as cond:
         cond.also(PanCall("alert", pan("hello, world")))
 
-    fp.contents.alsoDeclare(
-        "z", CrossList(unflex(int)), PanList([pan(1770)], CrossAny())
-    )
+    fp.contents.alsoDeclare("z", CrossList(unflex(int)), PanList([pan(1770)], CrossAny()))
 
     fp.writefile()
 

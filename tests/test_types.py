@@ -31,16 +31,11 @@ def test_producing_python_types() -> None:
     assert listof(int).getPyType()[0] == "typing.List[int]"
     assert CrossSet(unflex(str)).getPyType()[0] == "typing.Set[str]"
     assert dictof(str, int).getPyType()[0] == "typing.Dict[str, int]"
-    assert (
-        CrossMap(unflex(str), unflex(int)).getPyType()[0] == "typing.Mapping[str, int]"
-    )
+    assert CrossMap(unflex(str), unflex(int)).getPyType()[0] == "typing.Mapping[str, int]"
     assert unionof(str, int).getPyType()[0] == "typing.Union[str, int]"
     c = CrossCallable([unflex(str), unflex(int)], unflex(bool))
     assert c.getPyType()[0] == "typing.Callable[[str, int], bool]"
-    assert (
-        CrossPythonOnlyType("typing.Iterable[int]").getPyType()[0]
-        == "typing.Iterable[int]"
-    )
+    assert CrossPythonOnlyType("typing.Iterable[int]").getPyType()[0] == "typing.Iterable[int]"
 
     with pytest.raises(NotImplementedError):
         assert CrossTypeScriptOnlyType("Promise<ApiFailure>").getPyType()

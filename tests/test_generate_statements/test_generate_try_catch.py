@@ -21,13 +21,9 @@ def test_generate_try_catch_php(outcome: str) -> None:
                 tryblock.alsoRaise("LogicException", msg="some message")
             tryblock.also(phpexpr('echo "inside try block\\n"'))
 
-            with tryblock.withCatchBlock2(
-                None, phpclass="RuntimeException"
-            ) as catchblock:
+            with tryblock.withCatchBlock2(None, phpclass="RuntimeException") as catchblock:
                 catchblock.also(phpexpr('echo "got RuntimeException\\n"'))
-            with tryblock.withCatchBlock2(
-                None, phpclass="LogicException"
-            ) as catchblock:
+            with tryblock.withCatchBlock2(None, phpclass="LogicException") as catchblock:
                 catchblock.also(phpexpr('echo "got LogicException\\n"'))
             with tryblock.withFinallyBlock() as finallyblock:
                 finallyblock.also(phpexpr('echo "END\\n"'))
