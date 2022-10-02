@@ -401,7 +401,7 @@ class _PanItemAccess(PanExpr):
         targetstr: str,
         indexstr: str,
         fallbackexpr: PanExpr,
-    ) -> Tuple[str, PyPrecedence]:
+    ) -> Tuple[str, TSPrecedence]:
         raise NotImplementedError()
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
@@ -487,11 +487,11 @@ class PanKeyAccess(_PanItemAccess):
         targetstr: str,
         indexstr: str,
         fallbackexpr: PanExpr,
-    ) -> Tuple[str, PyPrecedence]:
+    ) -> Tuple[str, TSPrecedence]:
         accessstr = targetstr + "[" + indexstr + "]"
         return (
-            f"{accessstr} === undefined ? {fallbackexpr.getPyExpr()[0]} : {accessstr}",
-            PyPrecedence.Dot,
+            f"{accessstr} === undefined ? {fallbackexpr.getTSExpr()[0]} : {accessstr}",
+            TSPrecedence.Dot,
         )
 
     def getPanType(self) -> CrossType:
