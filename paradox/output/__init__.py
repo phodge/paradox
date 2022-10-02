@@ -90,9 +90,7 @@ class Script(AcceptsStatements):
     def alsoAppend(self, list_: "Pannable", value: "Pannable") -> None:
         self._content.alsoAppend(list_, value)
 
-    def alsoRaise(
-        self, ctor: str = None, *, msg: str = None, expr: "PanExpr" = None
-    ) -> None:
+    def alsoRaise(self, ctor: str = None, *, msg: str = None, expr: "PanExpr" = None) -> None:
         self._content.alsoRaise(ctor, msg=msg, expr=expr)
 
     def alsoAssign(
@@ -152,9 +150,7 @@ class Script(AcceptsStatements):
         # language version (e.g. lang="php", targetversion="3.7")
         with target.open("w") as f:
             writer = FileWriter(f, indentstr=indentstr)
-            self._write_to_writer(
-                writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace
-            )
+            self._write_to_writer(writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace)
 
     def write_to_handle(
         self,
@@ -169,9 +165,7 @@ class Script(AcceptsStatements):
         # language version (e.g. lang="php", targetversion="3.7")
         writer = FileWriter(handle, indentstr=indentstr)
 
-        self._write_to_writer(
-            writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace
-        )
+        self._write_to_writer(writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace)
 
     def get_source_code(
         self,
@@ -189,9 +183,7 @@ class Script(AcceptsStatements):
         handle = io.StringIO()
         writer = FileWriter(handle, indentstr=indentstr)
 
-        self._write_to_writer(
-            writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace
-        )
+        self._write_to_writer(writer, lang=lang, pretty=pretty, phpnamespace=phpnamespace)
 
         handle.seek(0)
         return handle.read()

@@ -72,9 +72,7 @@ class AcceptsStatements(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def alsoRaise(
-        self, ctor: str = None, *, msg: str = None, expr: "PanExpr" = None
-    ) -> None:
+    def alsoRaise(self, ctor: str = None, *, msg: str = None, expr: "PanExpr" = None) -> None:
         ...
 
     @abc.abstractmethod

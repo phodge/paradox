@@ -34,9 +34,7 @@ def test_HardCodedStatement(send_ellipsis: bool, LANG: SupportedLang) -> None:
 
     # test that we raise ImplementationMissing
     s.also(HardCodedStatement())
-    with pytest.raises(
-        ImplementationMissing, match="HardCodedStatement was not given "
-    ):
+    with pytest.raises(ImplementationMissing, match="HardCodedStatement was not given "):
         s.get_source_code(lang=LANG)
 
 

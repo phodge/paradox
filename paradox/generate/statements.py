@@ -353,18 +353,14 @@ class HardCodedStatement(StatementWithNoImports):
 
     def writepy(self, w: FileWriter) -> None:
         if self._python is ...:
-            raise ImplementationMissing(
-                "HardCodedStatement was not given a Python implementation"
-            )
+            raise ImplementationMissing("HardCodedStatement was not given a Python implementation")
         if self._python is not None:
             # XXX: mypy doesn't realise that self._python cannot be ...
             w.line0(self._python)  # type: ignore
 
     def writephp(self, w: FileWriter) -> None:
         if self._php is ...:
-            raise ImplementationMissing(
-                "HardCodedStatement was not given a PHP implementation"
-            )
+            raise ImplementationMissing("HardCodedStatement was not given a PHP implementation")
         if self._php is not None:
             # XXX: mypy doesn't realise that self._php cannot be ...
             w.line0(self._php)  # type: ignore
@@ -398,9 +394,7 @@ class RawTypescript(StatementWithNoImports):
 class SimpleRaise(StatementWithNoImports):
     _ctor: Optional[str]
 
-    def __init__(
-        self, ctor: str = None, *, msg: str = None, expr: PanExpr = None
-    ) -> None:
+    def __init__(self, ctor: str = None, *, msg: str = None, expr: PanExpr = None) -> None:
         super().__init__()
 
         assert msg is not None or expr is not None
@@ -613,9 +607,7 @@ class TryCatchBlock(Statements):
         self._catchblocks: List[Union[CatchBlock, CatchBlock2]] = []
 
     @contextmanager
-    def withCatchBlock(
-        self, catchexpr: str, catchvar: str = ""
-    ) -> Iterator[CatchBlock]:
+    def withCatchBlock(self, catchexpr: str, catchvar: str = "") -> Iterator[CatchBlock]:
         block = CatchBlock(catchexpr, catchvar)
         self._catchblocks.append(block)
         yield block
@@ -635,9 +627,7 @@ class TryCatchBlock(Statements):
     @contextmanager
     def withFinallyBlock(self) -> Iterator[FinallyBlock]:
         if self._finallyblock:
-            raise Exception(
-                "Cannot have multiple FinallyBlocks under a single TryCatchBlock"
-            )
+            raise Exception("Cannot have multiple FinallyBlocks under a single TryCatchBlock")
 
         block = FinallyBlock()
         self._finallyblock = block
@@ -662,9 +652,7 @@ class TryCatchBlock(Statements):
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
 
-        assert len(
-            self._catchblocks
-        ), "TryCatchBlock must have at least one Catch block"
+        assert len(self._catchblocks), "TryCatchBlock must have at least one Catch block"
 
         # all catch blocks must be a CatchBlock2 and have the same var name
         catchvar = None
@@ -791,9 +779,7 @@ class ForLoopBlock(Statements):
         w.blank()
 
     def writets(self, w: FileWriter) -> None:
-        w.line0(
-            f"for (let {self._assign.getTSExpr()[0]} of {self._expr.getTSExpr()[0]}) {{"
-        )
+        w.line0(f"for (let {self._assign.getTSExpr()[0]} of {self._expr.getTSExpr()[0]}) {{")
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
         w.line0(f"}}")
@@ -801,9 +787,7 @@ class ForLoopBlock(Statements):
         w.blank()
 
     def writephp(self, w: FileWriter) -> None:
-        w.line0(
-            f"foreach ({self._expr.getPHPExpr()[0]} as {self._assign.getPHPExpr()[0]}) {{"
-        )
+        w.line0(f"foreach ({self._expr.getPHPExpr()[0]} as {self._assign.getPHPExpr()[0]}) {{")
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
         w.line0(f"}}")
@@ -935,9 +919,7 @@ class DictBuilderStatement(Statement):
         assert isinstance(vartype, CrossDict)
         return cls(var, vartype.getKeyType(), vartype.getValueType())
 
-    def __init__(
-        self, var: Union[str, PanVar], keytype: FlexiType, valtype: FlexiType
-    ) -> None:
+    def __init__(self, var: Union[str, PanVar], keytype: FlexiType, valtype: FlexiType) -> None:
         super().__init__()
 
         keytype = unflex(keytype)
@@ -965,9 +947,7 @@ class DictBuilderStatement(Statement):
         self._keys.append((key, allowomit))
 
     def writepy(self, w: FileWriter) -> None:
-        inner = ", ".join(
-            [f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit]
-        )
+        inner = ", ".join([f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit])
 
         varstr = self._var.getPyExpr()[0]
 
@@ -982,9 +962,7 @@ class DictBuilderStatement(Statement):
                 w.line1(f"{varstr}[{k!r}] = {k}")
 
     def writets(self, w: FileWriter) -> None:
-        inner = ", ".join(
-            [f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit]
-        )
+        inner = ", ".join([f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit])
 
         varstr = self._var.getTSExpr()[0]
 
@@ -1223,9 +1201,7 @@ class FunctionSpec(Statements):
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
             havebody = True
-            assert (
-                not self._isabstract
-            ), "Abstract FunctionSpec must not have any statements"
+            assert not self._isabstract, "Abstract FunctionSpec must not have any statements"
 
         if not havebody:
             w.line1("..." if self._isabstract else "pass")
@@ -1366,9 +1342,7 @@ class FunctionSpec(Statements):
         for stmt in self._statements:
             yield from stmt.getImportsPy()
 
-        crosstypes: List[CrossType] = [
-            a[1] for a in itertools.chain(self._pargs, self._kwargs)
-        ]
+        crosstypes: List[CrossType] = [a[1] for a in itertools.chain(self._pargs, self._kwargs)]
 
         if self._rettype is not None:
             crosstypes.append(self._rettype)
@@ -1499,9 +1473,7 @@ class ClassSpec(Statement):
         )
         return PanProp(name, crosstype, None)
 
-    def _getInitSpec(
-        self, lang: Literal["python", "typescript", "php"]
-    ) -> Optional[FunctionSpec]:
+    def _getInitSpec(self, lang: Literal["python", "typescript", "php"]) -> Optional[FunctionSpec]:
         initdefaults = self._initdefaults
 
         if lang in ("typescript", "php"):

@@ -41,9 +41,7 @@ class FilePython(FileSpec):
     def makepretty(self) -> None:
         subprocess.check_call(["isort", self.target])
         # TODO: standardise these parameters somewhere
-        subprocess.check_call(
-            ["black", "--target-version=py37", "--line-length=98", self.target]
-        )
+        subprocess.check_call(["black", "--target-version=py37", "--line-length=98", self.target])
 
 
 class FileTS(FileSpec):
