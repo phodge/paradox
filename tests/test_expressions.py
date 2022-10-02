@@ -2,6 +2,45 @@ from paradox.expressions import PanCall, PanExpr, PanKeyAccess, PanLiteral, PanV
 from paradox.typing import CrossAny
 
 
+# TODO: add tests for each of the following
+# - PanIsType
+# - PanOmit
+# - PanList
+# - PanDict
+# - PanCast
+# - PanIndexAccess
+# - PanVar
+# - PanProp
+# - PanCall
+# - PanStringBuilder
+# - PanTSOnly
+# - PanPyOnly
+# - PanPHPOnly
+# - PanAndOr
+# - PanNot
+# - PanLengthExpr
+# - PanIsNullExpr
+# - PanCompare
+# - HardCodedExpr
+# - pan()
+# - panlist()
+# - pandict()
+# - pyexpr()
+# - phpexpr()
+# - tsexpr()
+# - pannotomit()
+# - or_()
+# - and_()
+# - not_()
+# - exacteq_()
+# - isnull()
+# - isbool()
+# - isint()
+# - isstr()
+# - islist()
+# - isdict()
+
+
 def test_PanLiteral() -> None:
     assert PanLiteral(True).getPHPExpr()[0] == "true"
     assert PanLiteral(True).getPyExpr()[0] == "True"
