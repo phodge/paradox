@@ -362,29 +362,47 @@ class _PanItemAccess(PanExpr):
         targetstr, targetprec = self._target.getPyExpr()
         if targetprec.value > PyPrecedence.Dot.value:
             targetstr = "(" + targetstr + ")"
-        if self._fallback:
-            raise Exception("TODO: handle fallback")
 
         if isinstance(self._idx, PanExpr):
             indexexpr = self._idx.getPyExpr()[0]
         else:
             indexexpr = repr(self._idx)
 
+        if self._fallback:
+            return self._getPyExprWithFallback(targetstr, indexexpr, self._fallback)
+
         return targetstr + "[" + indexexpr + "]", PyPrecedence.Dot
+
+    def _getPyExprWithFallback(
+        self,
+        targetstr: str,
+        indexstr: str,
+        fallbackexpr: PanExpr,
+    ) -> Tuple[str, PyPrecedence]:
+        raise NotImplementedError()
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         targetstr, targetprec = self._target.getTSExpr()
         if targetprec.value > TSPrecedence.Dot.value:
             targetstr = "(" + targetstr + ")"
-        if self._fallback:
-            raise Exception("TODO: handle fallback")
 
         if isinstance(self._idx, PanExpr):
             indexexpr = self._idx.getTSExpr()[0]
         else:
             indexexpr = repr(self._idx)
 
+        if self._fallback:
+            return self._getTSExprWithFallback(targetstr, indexexpr, self._fallback)
+
         return targetstr + "[" + indexexpr + "]", TSPrecedence.Dot
+
+    def _getTSExprWithFallback(
+        self,
+        targetstr: str,
+        indexstr: str,
+        fallbackexpr: PanExpr,
+    ) -> Tuple[str, PyPrecedence]:
+        raise NotImplementedError()
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         targetstr, targetprec = self._target.getPHPExpr()
@@ -426,12 +444,25 @@ class PanIndexAccess(_PanItemAccess):
         assert isinstance(targettype, CrossList)
         return targettype.getWrappedType()
 
+    def _getPyExprWithFallback(
+        self,
+        targetstr: str,
+        indexstr: str,
+        fallbackexpr: PanExpr,
+    ) -> Tuple[str, PyPrecedence]:
+        # TODO: for a python iterable you can use this formula:
+        #   next(itertools.islice(z, 2, None), fallback)
+        # See https://docs.python.org/3/library/itertools.html#itertools-recipes
+        raise Exception("TODO: handle fallback")
+
 
 class PanKeyAccess(_PanItemAccess):
     def __init__(
         self,
         target: PanExpr,
         key: Union[str, PanExpr],
+        # WARNING: the fallback is not guaranteed lazy-evaluated in all
+        # generated languages
         fallback: PanExpr = None,
     ) -> None:
         super().__init__()
@@ -439,6 +470,29 @@ class PanKeyAccess(_PanItemAccess):
         self._target = target
         self._idx = key
         self._fallback = fallback
+
+    def _getPyExprWithFallback(
+        self,
+        targetstr: str,
+        indexstr: str,
+        fallbackexpr: PanExpr,
+    ) -> Tuple[str, PyPrecedence]:
+        return (
+            f"{targetstr}.get({indexstr}, {fallbackexpr.getPyExpr()[0]})",
+            PyPrecedence.Dot,
+        )
+
+    def _getTSExprWithFallback(
+        self,
+        targetstr: str,
+        indexstr: str,
+        fallbackexpr: PanExpr,
+    ) -> Tuple[str, PyPrecedence]:
+        accessstr = targetstr + "[" + indexstr + "]"
+        return (
+            f"{accessstr} === undefined ? {fallbackexpr.getPyExpr()[0]} : {accessstr}",
+            PyPrecedence.Dot,
+        )
 
     def getPanType(self) -> CrossType:
         targettype = self._target.getPanType()
