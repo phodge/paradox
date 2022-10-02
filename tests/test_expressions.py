@@ -1,7 +1,6 @@
 from paradox.expressions import PanCall, PanExpr, PanKeyAccess, PanLiteral, PanVar, pan
 from paradox.typing import CrossAny
 
-
 # TODO: add tests for each of the following
 # - PanIsType
 # - PanOmit
