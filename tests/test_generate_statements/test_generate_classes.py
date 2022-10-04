@@ -79,7 +79,6 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
     elif LANG == "python":
         expected = '''
             import typing
-            import typing_extensions
 
             class Class1:
                 """
@@ -110,7 +109,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
 
                 def getprop2(
                     self,
-                ) -> typing.Union[str, typing_extensions.Literal[-1]]:
+                ) -> typing.Union[str, typing.Literal[-1]]:
                     """
                     Return prop2,
                     or -1 if it is empty

@@ -5,13 +5,12 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     Optional,
     Tuple,
     TypeVar,
     Union,
 )
-
-from typing_extensions import Literal
 
 if TYPE_CHECKING:
     import builtins

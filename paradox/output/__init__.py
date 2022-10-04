@@ -1,9 +1,7 @@
 import io
 from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
-
-from typing_extensions import Literal
+from typing import IO, TYPE_CHECKING, Iterator, List, Literal, Optional, Union
 
 from paradox.interfaces import AcceptsStatements, AlsoParam
 
