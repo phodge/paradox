@@ -3,7 +3,7 @@ import builtins
 import itertools
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union, cast
+from typing import Dict, Iterable, Iterator, List, Literal, Optional, Tuple, Union, cast
 
 from paradox.expressions import (
     PanExpr,
@@ -41,16 +41,6 @@ from paradox.typing import (
     omittable,
     unflex,
 )
-
-try:
-    # typing_extensions is only installed on python < 3.8
-    # Note that typing_extensions will import Literal from typing module if possible, so if
-    # typing.Literal exists, it will be used
-    from typing_extensions import Literal
-except ImportError:
-    # on python 3.8 and newer, when typing_extensions isn't available, we can just import
-    # typing.Literal directly.
-    from typing import Literal  # type: ignore
 
 
 class NoDefault:

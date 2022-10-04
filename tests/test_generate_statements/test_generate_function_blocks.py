@@ -256,21 +256,20 @@ def test_FunctionSpec_overloads(LANG: SupportedLang) -> None:
     if LANG == "python":
         expected = """
             import typing
-            import typing_extensions
 
 
             @typing.overload
             def overfun(
-                a: typing_extensions.Literal[True],
+                a: typing.Literal[True],
                 b: str,
-            ) -> typing_extensions.Literal[True]:
+            ) -> typing.Literal[True]:
                 ...
 
             @typing.overload
             def overfun(
-                a: typing_extensions.Literal[False],
+                a: typing.Literal[False],
                 b: int,
-            ) -> typing_extensions.Literal[False]:
+            ) -> typing.Literal[False]:
                 ...
 
             def overfun(

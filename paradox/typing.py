@@ -146,8 +146,8 @@ class CrossLiteral(CrossType):
     def __init__(self, variants: List[Union[str, int, bool]]) -> None:
         super().__init__()
 
-        # FIXME: we need to make sure typing_extensions is imported
-        self._pythonotherimports["typing_extensions"].append(None)
+        # FIXME: we need to make sure typing is imported
+        self._pythonotherimports["typing"].append(None)
 
         assert len(variants)
         self._variants: List[Union[str, int, bool]] = variants
@@ -166,7 +166,7 @@ class CrossLiteral(CrossType):
 
     def getPyType(self) -> Tuple[str, bool]:
         inner = map(repr, self._variants)
-        return f"typing_extensions.Literal[{', '.join(inner)}]", False
+        return f"typing.Literal[{', '.join(inner)}]", False
 
     def getPHPTypes(self) -> Tuple[Optional[str], str, bool]:
         # PHP doesn't have support for literals, so we just use vanilla types

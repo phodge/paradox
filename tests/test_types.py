@@ -24,7 +24,7 @@ def test_producing_python_types() -> None:
     assert unflex(int).getPyType()[0] == "int"
     assert unflex(bool).getPyType()[0] == "bool"
     assert unflex(None).getPyType()[0] == "None"
-    assert lit("cheese").getPyType()[0] == "typing_extensions.Literal['cheese']"
+    assert lit("cheese").getPyType()[0] == "typing.Literal['cheese']"
     assert omittable(int).getPyType()[0] == "typing.Union[int, builtins.ellipsis]"
     assert CrossNewType("Widget").getPyType()[0] == "Widget"
     assert maybe(str).getPyType()[0] == "typing.Optional[str]"

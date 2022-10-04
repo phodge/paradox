@@ -1,3 +1,3 @@
-from typing_extensions import Literal
+from typing import Literal
 
 SupportedLang = Literal["php", "python", "typescript"]
