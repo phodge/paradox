@@ -16,12 +16,11 @@ def write_top_imports(writer: FileWriter, top: WantsImports) -> None:
     # group imports first
     direct_imports: Set[str] = set()
     named_imports: Dict[str, Set[str]] = defaultdict(set)
-    for module, names in top.getImportsPy():
-        if names is None:
+    for module, name in top.getImportsPy():
+        if name is None:
             direct_imports.add(module)
         else:
-            for name in names:
-                named_imports[module].add(name)
+            named_imports[module].add(name)
 
     for name in sorted(direct_imports):
         writer.line0(f"import {name}")

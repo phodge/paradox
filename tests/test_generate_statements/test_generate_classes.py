@@ -78,7 +78,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
             """
     elif LANG == "python":
         expected = '''
-            import typing
+            from typing import Any, Literal, Union
 
             class Class1:
                 """
@@ -103,13 +103,13 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
                 @classmethod
                 def sixtysix(
                     class_,
-                ) -> typing.Any:
+                ) -> Any:
                     return Class1(66)
 
 
                 def getprop2(
                     self,
-                ) -> typing.Union[str, typing.Literal[-1]]:
+                ) -> Union[str, Literal[-1]]:
                     """
                     Return prop2,
                     or -1 if it is empty
@@ -196,7 +196,8 @@ def test_ClassSpec_abstract(LANG: SupportedLang) -> None:
     elif LANG == "python":
         expected = """
             import abc
-            import typing
+
+            from typing import Dict, List, Union
 
             class Class2(abc.ABC):
                 meta1: int
@@ -205,9 +206,9 @@ def test_ClassSpec_abstract(LANG: SupportedLang) -> None:
                 @abc.abstractmethod
                 def abstract_method(
                     self,
-                    a: typing.List[int],
-                    b: typing.Dict[int, bool],
-                ) -> typing.Union[str, int]:
+                    a: List[int],
+                    b: Dict[int, bool],
+                ) -> Union[str, int]:
                     ...
 
             """

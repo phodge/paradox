@@ -70,7 +70,7 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
             """
     elif LANG == "python":
         expected = '''
-            import typing
+            from typing import Any, Optional
 
 
             def int_identity(
@@ -89,8 +89,8 @@ def test_FunctionSpec(LANG: SupportedLang) -> None:
 
             def test_defaults(
                 required_int: int,
-                maybe_int: typing.Optional[int] = None,
-            ) -> typing.Any:
+                maybe_int: Optional[int] = None,
+            ) -> Any:
                 pass
             '''
     else:
@@ -138,12 +138,13 @@ def test_FunctionSpec_omittable_args(LANG: SupportedLang) -> None:
     if LANG == "python":
         expected = """
             import builtins
-            import typing
+
+            from typing import Union
 
 
             def omittable(
-                a: 'typing.Union[bool, builtins.ellipsis]' = ...,
-                b: 'typing.Union[bool, builtins.ellipsis]' = ...,
+                a: 'Union[bool, builtins.ellipsis]' = ...,
+                b: 'Union[bool, builtins.ellipsis]' = ...,
             ) -> bool:
                 return bool((a != (...)) or (b != (...)))
             """
@@ -193,7 +194,8 @@ def test_FunctionSpec_kwargs(LANG: SupportedLang) -> None:
     if LANG == "python":
         expected = """
             import builtins
-            import typing
+
+            from typing import List, Optional, Union
 
 
             def some_kwargs(
@@ -208,10 +210,10 @@ def test_FunctionSpec_kwargs(LANG: SupportedLang) -> None:
 
             def more_kwargs(
                 *,
-                k1: typing.List[str],
-                k2: typing.Optional[typing.List[str]],
-                k3: 'typing.Union[typing.List[str], builtins.ellipsis]' = ...,
-                k4: 'typing.Union[typing.List[str], None, builtins.ellipsis]' = ...,
+                k1: List[str],
+                k2: Optional[List[str]],
+                k3: 'Union[List[str], builtins.ellipsis]' = ...,
+                k4: 'Union[List[str], None, builtins.ellipsis]' = ...,
             ) -> bool:
                 return bool((k1) or (k2) or (k3) or (k4))
             """
@@ -257,24 +259,26 @@ def test_FunctionSpec_overloads(LANG: SupportedLang) -> None:
         expected = """
             import typing
 
+            from typing import Literal, Union
+
 
             @typing.overload
             def overfun(
-                a: typing.Literal[True],
+                a: Literal[True],
                 b: str,
-            ) -> typing.Literal[True]:
+            ) -> Literal[True]:
                 ...
 
             @typing.overload
             def overfun(
-                a: typing.Literal[False],
+                a: Literal[False],
                 b: int,
-            ) -> typing.Literal[False]:
+            ) -> Literal[False]:
                 ...
 
             def overfun(
                 a: bool,
-                b: typing.Union[str, int],
+                b: Union[str, int],
             ) -> bool:
                 return bool((a) or (b))
             """
