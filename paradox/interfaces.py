@@ -42,6 +42,10 @@ class ImplementationMissing(Exception):
     """
 
 
+class InvalidLogic(Exception):
+    """Raised when statements/expressions construction is not valid."""
+
+
 AlsoParam = TypeVar("AlsoParam", bound="Union[Statement, PanExpr]")
 
 
@@ -121,7 +125,7 @@ class AcceptsStatements(abc.ABC):
         ...
 
 
-ImportSpecPy = Tuple[str, Optional[List[str]]]
+ImportSpecPy = Tuple[str, Optional[str]]
 ImportSpecTS = Tuple[str, Optional[List[str]]]
 ImportSpecPHP = Tuple[str, Optional[str]]
 
@@ -135,7 +139,9 @@ class WantsImports(abc.ABC):
 
     @abc.abstractmethod
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
-        ...
+        # XXX: we need to return an iterable here so that subclasses can use
+        #   yield from super().getImportsTS()
+        return []
 
     @abc.abstractmethod
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:

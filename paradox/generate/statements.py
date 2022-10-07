@@ -97,31 +97,60 @@ class Statement(WantsImports, DefinesCustomTypes, abc.ABC):
         ...
 
 
-class Statements(Statement, AcceptsStatements):
-    _statements: List[Statement]
+class _StatementWithCustomImports(Statement):
     _importspy: List[ImportSpecPy]
     _importsts: List[ImportSpecTS]
     _importsphp: List[ImportSpecPHP]
 
     def __init__(self) -> None:
         super().__init__()
-        self._statements = []
+
         self._importspy = []
         self._importsts = []
         self._importsphp = []
 
+    def alsoImportPy(self, module: str, names: List[str] = None) -> None:
+        if names is None:
+            self._importspy.append((module, None))
+        else:
+            for name in names:
+                self._importspy.append((module, name))
+
+    def alsoImportTS(self, module: str, names: List[str] = None) -> None:
+        self._importsts.append((module, names))
+
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
+        yield from super().getImportsPy()
         yield from self._importspy
+
+    def getImportsTS(self) -> Iterable[ImportSpecTS]:
+        yield from super().getImportsTS()
+        yield from self._importsts
+
+    def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
+        yield from super().getImportsPHP()
+        yield from self._importsphp
+
+
+class Statements(_StatementWithCustomImports, AcceptsStatements):
+    _statements: List[Statement]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._statements = []
+
+    def getImportsPy(self) -> Iterable[ImportSpecPy]:
+        yield from super().getImportsPy()
         for stmt in self._statements:
             yield from stmt.getImportsPy()
 
-    def getImportsTS(self) -> Iterable[ImportSpecPy]:
-        yield from self._importsts
+    def getImportsTS(self) -> Iterable[ImportSpecTS]:
+        yield from super().getImportsTS()
         for stmt in self._statements:
             yield from stmt.getImportsTS()
 
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
-        yield from self._importsphp
+        yield from super().getImportsPHP()
         for stmt in self._statements:
             yield from stmt.getImportsPHP()
 
@@ -135,12 +164,6 @@ class Statements(Statement, AcceptsStatements):
             stmt = cast(Statement, stmt_or_expr)
         self._statements.append(stmt)
         return cast(AlsoParam, stmt)
-
-    def alsoImportPy(self, module: str, names: List[str] = None) -> None:
-        self._importspy.append((module, names))
-
-    def alsoImportTS(self, module: str, names: List[str] = None) -> None:
-        self._importsts.append((module, names))
 
     def remark(self, text: str) -> None:
         self._statements.append(Comment(text))
@@ -860,11 +883,7 @@ class AssignmentStatement(Statement):
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
         if self._declaretype and self._declaretype:
             pantype: CrossType = self._target.getPanType()
-            for module, name in pantype.getPyImports():
-                if name is None:
-                    yield module, None
-                else:
-                    yield module, [name]
+            yield from pantype.getPyImports()
 
     def writepy(self, w: FileWriter) -> None:
         left = self._target.getPyExpr()[0]
@@ -1338,11 +1357,7 @@ class FunctionSpec(Statements):
             crosstypes.append(self._rettype)
 
         for crosstype in crosstypes:
-            for module, name in crosstype.getPyImports():
-                if name:
-                    yield module, [name]
-                else:
-                    yield module, None
+            yield from crosstype.getPyImports()
 
         if self._overloads:
             yield "typing", None
@@ -1371,11 +1386,7 @@ class ClassProperty:
     tsreadonly: bool = False
 
 
-class ClassSpec(Statement):
-    _importspy: List[ImportSpecPy]
-    _importsts: List[ImportSpecTS]
-    _importsphp: List[ImportSpecPHP]
-
+class ClassSpec(_StatementWithCustomImports):
     def __init__(
         self,
         name: str,
@@ -1404,10 +1415,6 @@ class ClassSpec(Statement):
         self._decorators: List[str] = []
         self._tsexport: bool = tsexport
         self._tsbase: Optional[str] = tsbase
-
-        self._importspy = []
-        self._importsts = []
-        self._importsphp = []
 
     @property
     def classname(self) -> str:
@@ -1510,14 +1517,8 @@ class ClassSpec(Statement):
 
         return initspec
 
-    def alsoImportPy(self, module: str, names: List[str] = None) -> None:
-        self._importspy.append((module, names))
-
-    def alsoImportTS(self, module: str, names: List[str] = None) -> None:
-        self._importsts.append((module, names))
-
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
-        yield from self._importspy
+        yield from super().getImportsPy()
         if self._isabstract:
             yield "abc", None
         if self._isdataclass:
@@ -1542,7 +1543,7 @@ class ClassSpec(Statement):
             yield from method.getImportsTS()
 
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
-        yield from self._importsphp
+        yield from super().getImportsPHP()
 
         constructor = self._getInitSpec("php")
         if constructor:
@@ -1720,7 +1721,7 @@ class ClassSpec(Statement):
         w.line0("}")
 
 
-class InterfaceSpec(Statement):
+class InterfaceSpec(_StatementWithCustomImports):
     def __init__(
         self,
         name: str,
@@ -1743,11 +1744,7 @@ class InterfaceSpec(Statement):
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
         yield from super().getImportsPy()
         for _, crosstype in self._properties:
-            for module, name in crosstype.getPyImports():
-                if name:
-                    yield module, [name]
-                else:
-                    yield module, None
+            yield from crosstype.getPyImports()
 
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
         yield from super().getImportsPHP()
@@ -1755,6 +1752,7 @@ class InterfaceSpec(Statement):
             yield from crosstype.getImportsPHP()
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
+        yield from super().getImportsTS()
         for name, crosstype in self._properties:
             # TODO: get imports from crosstype
             # yield from crosstype.getImportsTS()

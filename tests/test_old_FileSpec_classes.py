@@ -78,6 +78,7 @@ def test_FilePython_produces_python(tmppath: Path) -> None:
     with fp.contents.withCond(pan(False)) as cond:
         cond.also(PanCall("len", pan("")))
 
+    # Note: use of maybe() here should cause an import of typing.Optional
     fp.contents.alsoDeclare("z", maybe(int), PanCall("len", pan("five")))
 
     fp.writefile()
@@ -90,12 +91,12 @@ def test_FilePython_produces_python(tmppath: Path) -> None:
             This is a test script
             Use it for testing
             """
-            import typing
+            from typing import Optional
 
             if False:
                 len('')
 
-            z: typing.Optional[int] = len('five')
+            z: Optional[int] = len('five')
             '''
         ).lstrip()
     )
