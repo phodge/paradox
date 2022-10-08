@@ -1,9 +1,19 @@
-from paradox.expressions import PanCall, PanExpr, PanKeyAccess, PanLiteral, PanVar, pan
-from paradox.typing import CrossAny
+import pytest
+
+from paradox.expressions import (
+    PanCall,
+    PanExpr,
+    PanKeyAccess,
+    PanLiteral,
+    PanOmit,
+    PanVar,
+    pan,
+)
+from paradox.interfaces import NotSupportedError
+from paradox.typing import CrossAny, CrossOmit
 
 # TODO: add tests for each of the following
 # - PanIsType
-# - PanOmit
 # - PanList
 # - PanDict
 # - PanCast
@@ -65,6 +75,15 @@ def test_PanLiteral() -> None:
     assert PanLiteral("0").getPHPExpr()[0] == "'0'"
     assert PanLiteral("0").getPyExpr()[0] == "'0'"
     assert PanLiteral("0").getTSExpr()[0] == "'0'"
+
+
+def test_PanOmit() -> None:
+    o = PanOmit()
+    assert o.getPyExpr()[0] == "..."
+    assert o.getTSExpr()[0] == "undefined"
+    with pytest.raises(NotSupportedError):
+        assert o.getPHPExpr()
+    assert isinstance(o.getPanType(), CrossOmit)
 
 
 def test_PanKeyAccess() -> None:
