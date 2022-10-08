@@ -14,6 +14,7 @@ from typing import (
     Union,
 )
 
+from paradox.interfaces import NotSupportedError
 from paradox.typing import (
     CrossAny,
     CrossBool,
@@ -249,7 +250,7 @@ class PanOmit(PanExpr):
         return "undefined", TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        raise NotImplementedError("PHP has no way to express omitted arguments")
+        raise NotSupportedError("PHP has no way to express omitted arguments")
 
 
 class PanList(PanExpr):
