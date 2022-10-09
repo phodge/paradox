@@ -498,6 +498,7 @@ def unflex(t: Union[FlexiType, None], *, allownewtypes: bool = False) -> CrossTy
     if isinstance(t, CrossType):
         return t
 
+    # TODO: unit test this
     raise TypeError(f"Cannot unflex {t.__name__}")
 
 

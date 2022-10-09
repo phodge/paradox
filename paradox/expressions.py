@@ -338,6 +338,7 @@ class PanCast(PanExpr):
         return f"({valexpr} as {typeexpr})", TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        # TODO: unit test this
         raise NotImplementedError("PanCast is not implemented in PHP")
 
 
