@@ -881,6 +881,7 @@ class AssignmentStatement(Statement):
         return []
 
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
+        yield from super().getImportsPy()
         if self._declaretype and self._declaretype:
             pantype: CrossType = self._target.getPanType()
             yield from pantype.getPyImports()
