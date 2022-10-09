@@ -332,7 +332,7 @@ class PanCast(PanExpr):
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
         typeexpr = self._type.getQuotedPyType()
         valexpr = self._expr.getPyExpr()[0]
-        return f"typing.cast({typeexpr}, {valexpr})", PyPrecedence.MultDiv
+        return f"cast({typeexpr}, {valexpr})", PyPrecedence.MultDiv
 
     def getTSExpr(self) -> Tuple[str, TSPrecedence]:
         typeexpr = self._type.getTSType()[0]
