@@ -315,6 +315,7 @@ class PanDict(PanExpr):
         self._pairs[realkey] = val
 
 
+# TODO: this needs to import typing.cast()
 class PanCast(PanExpr):
     def __init__(self, type: CrossType, expr: PanExpr) -> None:
         super().__init__()
@@ -338,8 +339,8 @@ class PanCast(PanExpr):
         return f"({valexpr} as {typeexpr})", TSPrecedence.Literal
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
-        # TODO: unit test this
-        raise NotImplementedError("PanCast is not implemented in PHP")
+        # TODO: finish this and add a unit test
+        raise NotImplementedError("PanCast is not yet implemented in PHP")
 
 
 class _PanItemAccess(PanExpr):
