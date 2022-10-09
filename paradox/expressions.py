@@ -1,6 +1,5 @@
 import abc
 import enum
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -100,13 +99,10 @@ def _wrapmult(pair: Tuple[str, Union[PyPrecedence, TSPrecedence, PHPPrecedence]]
     return code
 
 
+# TODO: this should implement paradox.interfaces.WantsImports
+# TODO: each subclass of PanExpr() should recursively pull in imports from
+# inner expressions as per test_nested_python_imports()
 class PanExpr(abc.ABC):
-    # which python typing module imports are needed
-    _pythonimports: Dict[str, List[str]]
-
-    def __init__(self) -> None:
-        self._pythonimports = defaultdict(list)
-
     def cast(self, newtype: FlexiType) -> "PanCast":
         return PanCast(unflex(newtype), self)
 
