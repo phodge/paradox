@@ -2,6 +2,7 @@ import pytest
 
 from paradox.expressions import (
     PanCall,
+    PanCast,
     PanExpr,
     PanKeyAccess,
     PanLiteral,
@@ -10,13 +11,12 @@ from paradox.expressions import (
     pan,
 )
 from paradox.interfaces import NotSupportedError
-from paradox.typing import CrossAny, CrossOmit
+from paradox.typing import CrossAny, CrossOmit, CrossStr
 
 # TODO: add tests for each of the following
 # - PanIsType
 # - PanList
 # - PanDict
-# - PanCast
 # - PanIndexAccess
 # - PanVar
 # - PanProp
@@ -84,6 +84,12 @@ def test_PanOmit() -> None:
     with pytest.raises(NotSupportedError):
         assert o.getPHPExpr()
     assert isinstance(o.getPanType(), CrossOmit)
+
+
+def test_PanCast() -> None:
+    assert PanCast(CrossStr(), pan(5)).getPyExpr()[0] == "cast(str, 5)"
+    assert PanCast(CrossStr(), pan(5)).getTSExpr()[0] == "(5 as string)"
+    # TODO: this is not yet implemented in PHP
 
 
 def test_PanKeyAccess() -> None:
