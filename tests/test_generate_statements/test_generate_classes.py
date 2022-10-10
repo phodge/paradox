@@ -4,7 +4,16 @@ from _paradoxtest import SupportedLang
 from paradox.expressions import PanCall, pan
 from paradox.generate.statements import NO_DEFAULT, ClassSpec
 from paradox.output import Script
-from paradox.typing import CrossAny, dictof, listof, lit, unionof
+from paradox.typing import (
+    CrossAny,
+    CrossCustomType,
+    CrossNull,
+    dictof,
+    listof,
+    lit,
+    maybe,
+    unionof,
+)
 
 
 def test_ClassSpec(LANG: SupportedLang) -> None:
@@ -227,3 +236,149 @@ def test_ClassSpec_abstract(LANG: SupportedLang) -> None:
 
     assert source_code == dedent(expected).lstrip()
     assert c.classname == "Class2"
+
+
+def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
+    s = Script()
+
+    c = s.also(ClassSpec("NumberBox"))
+    c.alsoImportPy("readline")
+    # TODO: also test Typescript imports
+    # TODO: also test PHP imports
+
+    # adding this property should force the script to import module1.Foo as
+    # well as typing.List
+    custom1 = CrossCustomType(python="Foo", typescript="Foo", phplang="Foo", phpdoc="Foo")
+    custom1.alsoImportPy("module1", ["Foo"])
+    # TODO: add tests for Typescript imports
+    # TODO: add tests for PHP imports
+    c.addProperty("some_prop", listof(custom1))
+    p_num = c.addProperty("num", maybe(int), initarg=True)
+
+    # create a Factory method
+    # TODO: replace CrossAny() with the class' type when we work out what that should look like
+    factoryfn = c.createMethod(
+        "random",
+        CrossCustomType(
+            python="NumberBox", typescript="NumberBox", phplang="NumberBox", phpdoc="NumberBox"
+        ),
+        isstaticmethod=True,
+    )
+    factoryfn.alsoReturn(
+        PanCall.callClassConstructor("NumberBox", PanCall("get_random_int", pan(1), pan(10)))
+    )
+    factoryfn.alsoImportPy("math_fns", ["get_random_int"])
+
+    # other method with body
+    printnum = c.createMethod(
+        "printnum",
+        CrossNull(),
+    )
+    # this should cause import of typing.Literal
+    v_wanted = printnum.addPositionalArg("wanted", lit(True, False))
+    with printnum.withCond(v_wanted) as cond:
+        cond.alsoImportPy("print_fns", ["print_line", "format_msg"])
+        # TODO: add tests for Typescript imports
+        # TODO: add tests for PHP imports
+        cond.also(PanCall("print_line", PanCall("format_msg", p_num)))
+
+    source_code = s.get_source_code(lang=LANG)
+
+    if LANG == "php":
+        expected = """
+            <?php
+
+            class NumberBox {
+                /** @var mixed */
+                public $some_prop;
+                /** @var null|int */
+                public $num;
+
+                public function __construct(
+                    $num
+                ) {
+                    $this->num = $num;
+                }
+
+                static public function random(
+                ): NumberBox {
+                    return new NumberBox(get_random_int(1, 10));
+                }
+
+                public function printnum(
+                    bool $wanted
+                ) {
+                    if ($wanted) {
+                        print_line(format_msg($this->num));
+                    }
+
+                }
+            }
+            """
+    elif LANG == "python":
+        expected = """
+            import readline
+
+            from math_fns import get_random_int
+            from module1 import Foo
+            from print_fns import format_msg, print_line
+            from typing import List, Literal, Optional
+
+            class NumberBox:
+                some_prop: 'List[Foo]'
+                num: Optional[int]
+
+
+                def __init__(
+                    self,
+                    num: Optional[int],
+                ) -> None:
+                    self.num = num
+
+
+                @classmethod
+                def random(
+                    class_,
+                ) -> 'NumberBox':
+                    return NumberBox(get_random_int(1, 10))
+
+
+                def printnum(
+                    self,
+                    wanted: Literal[True, False],
+                ) -> None:
+                    if wanted:
+                        print_line(format_msg(self.num))
+
+
+            """
+    else:
+        assert LANG == "typescript"
+        expected = """
+            class NumberBox {
+                public some_prop: Array<Foo>;
+                public num: number | null;
+
+                public constructor(
+                    num: number | null,
+                ) {
+                    this.num = num;
+                }
+
+                static random(
+                ): NumberBox {
+                    return new NumberBox(get_random_int(1, 10));
+                }
+
+                public printnum(
+                    wanted: true | false,
+                ): null {
+                    if (wanted) {
+                        print_line(format_msg(this.num));
+                    }
+
+                }
+            }
+            """
+
+    assert source_code == dedent(expected).lstrip()
