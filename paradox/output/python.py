@@ -27,7 +27,7 @@ def write_top_imports(writer: FileWriter, top: WantsImports) -> None:
     if direct_imports:
         writer.blank()
 
-    for module, imported_names in named_imports.items():
+    for module, imported_names in sorted(named_imports.items(), key=lambda pair: pair[0]):
         writer.line0(f"from {module} import {', '.join(sorted(imported_names))}")
     if named_imports:
         writer.blank()
