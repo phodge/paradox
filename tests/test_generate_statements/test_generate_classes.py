@@ -5,7 +5,6 @@ from paradox.expressions import PanCall, pan
 from paradox.generate.statements import NO_DEFAULT, ClassSpec
 from paradox.output import Script
 from paradox.typing import (
-    CrossAny,
     CrossCustomType,
     CrossNull,
     dictof,
@@ -29,7 +28,11 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
     prop2 = c.addProperty("prop2", int, default=79, initarg=True)
 
     # create a Factory method
-    factoryfn = c.createMethod("sixtysix", CrossAny(), isstaticmethod=True)
+    factoryfn = c.createMethod(
+        "sixtysix",
+        CrossCustomType(python="Class1", typescript="Class1", phplang="Class1", phpdoc="Class1"),
+        isstaticmethod=True,
+    )
     factoryfn.alsoReturn(PanCall.callClassConstructor("Class1", pan(66)))
 
     # other method with body
@@ -67,7 +70,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
                 }
 
                 static public function sixtysix(
-                ) {
+                ): Class1 {
                     return new Class1(66);
                 }
 
@@ -87,7 +90,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
             """
     elif LANG == "python":
         expected = '''
-            from typing import Any, Literal, Union
+            from typing import Literal, Union
 
             class Class1:
                 """
@@ -112,7 +115,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
                 @classmethod
                 def sixtysix(
                     class_,
-                ) -> Any:
+                ) -> 'Class1':
                     return Class1(66)
 
 
@@ -149,7 +152,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
                 }
 
                 static sixtysix(
-                ): any {
+                ): Class1 {
                     return new Class1(66);
                 }
 
@@ -256,7 +259,6 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
     p_num = c.addProperty("num", maybe(int), initarg=True)
 
     # create a Factory method
-    # TODO: replace CrossAny() with the class' type when we work out what that should look like
     factoryfn = c.createMethod(
         "random",
         CrossCustomType(

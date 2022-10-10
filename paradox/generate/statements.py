@@ -1413,7 +1413,7 @@ class ClassSpec(_StatementWithCustomImports):
         self._remarks: List[str] = []
         self._properties: List[ClassProperty] = []
         self._initargs: List[Tuple[str, CrossType, Optional[PanExpr]]] = []
-        self._initdefaults: List[Tuple[str, PanExpr]] = []
+        self._initdefaults: List[Tuple[str, PanExpr, CrossType]] = []
         self._decorators: List[str] = []
         self._tsexport: bool = tsexport
         self._tsbase: Optional[str] = tsbase
@@ -1459,7 +1459,7 @@ class ClassSpec(_StatementWithCustomImports):
         if initarg:
             self._initargs.append((name, crosstype, realdefault))
         elif realdefault is not None:
-            self._initdefaults.append((name, realdefault))
+            self._initdefaults.append((name, realdefault, crosstype))
 
         self._properties.append(
             ClassProperty(
@@ -1514,8 +1514,8 @@ class ClassSpec(_StatementWithCustomImports):
             )
 
         # do we need positional args for any of the properties?
-        for name, default in initdefaults:
-            initspec.alsoAssign(PanProp(name, CrossAny(), None), default)
+        for name, default, crosstype in initdefaults:
+            initspec.alsoAssign(PanProp(name, crosstype, None), default)
 
         return initspec
 
