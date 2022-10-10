@@ -1490,7 +1490,7 @@ class ClassSpec(_StatementWithCustomImports):
                 crosstype,
                 default=NO_DEFAULT if pandefault is None else pandefault,
             )
-            initspec.alsoAssign(PanProp(name, CrossAny(), None), PanVar(name, None))
+            initspec.alsoAssign(PanProp(name, crosstype, None), PanVar(name, None))
 
         if self._bases and lang == "python":
             initspec.addPositionalArg("*args", CrossAny())
