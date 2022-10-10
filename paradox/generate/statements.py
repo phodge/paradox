@@ -109,6 +109,7 @@ class _StatementWithCustomImports(Statement):
         self._importsts = []
         self._importsphp = []
 
+    # TODO: add an alsoImportPHP()
     def alsoImportPy(self, module: str, names: List[str] = None) -> None:
         if names is None:
             self._importspy.append((module, None))
@@ -1548,6 +1549,8 @@ class ClassSpec(_StatementWithCustomImports):
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
         yield from super().getImportsPHP()
 
+        # TODO: also need to yield imports from properties
+
         constructor = self._getInitSpec("php")
         if constructor:
             yield from constructor.getImportsPHP()
@@ -1756,6 +1759,7 @@ class InterfaceSpec(_StatementWithCustomImports):
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         yield from super().getImportsTS()
+        # TODO: make sure this is unit tested
         for name, crosstype in self._properties:
             # TODO: get imports from crosstype
             # yield from crosstype.getImportsTS()
