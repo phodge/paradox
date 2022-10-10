@@ -1527,6 +1527,8 @@ class ClassSpec(_StatementWithCustomImports):
         constructor = self._getInitSpec("python")
         if constructor:
             yield from constructor.getImportsPy()
+        for prop in self._properties:
+            yield from prop.proptype.getPyImports()
         for method in self._methods:
             yield from method.getImportsPy()
 
