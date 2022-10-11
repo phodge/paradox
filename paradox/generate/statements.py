@@ -1213,7 +1213,10 @@ class FunctionSpec(Statements):
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
             havebody = True
-            assert not self._isabstract, "Abstract FunctionSpec must not have any statements"
+            if self._isabstract:
+                raise InvalidLogic(
+                    f"Abstract FunctionSpec {self._name}() must not have any statements"
+                )
 
         if not havebody:
             w.line1("..." if self._isabstract else "pass")
@@ -1233,6 +1236,11 @@ class FunctionSpec(Statements):
             modifiers.append("async")
 
         if self._isabstract:
+            if len(self._statements):
+                raise InvalidLogic(
+                    f"Abstract FunctionSpec {self._name}() must not have any statements"
+                )
+
             modifiers.append("abstract")
 
         if self._isstaticmethod:
@@ -1275,7 +1283,6 @@ class FunctionSpec(Statements):
                 rettype = "Promise<" + rettype + ">"
 
         if self._isabstract:
-            assert not len(self._statements)
             w.line0(f"): {rettype};" if rettype else ");")
         else:
             w.line0(f"): {rettype} {{" if rettype else ") {")
@@ -1295,6 +1302,11 @@ class FunctionSpec(Statements):
             w.line0(" */")
 
         if self._isabstract:
+            if len(self._statements):
+                raise InvalidLogic(
+                    f"Abstract FunctionSpec {self._name}() must not have any statements"
+                )
+
             modifiers.append("abstract")
 
         if self._isstaticmethod:
@@ -1338,7 +1350,6 @@ class FunctionSpec(Statements):
             rettype = ": " + rettype
 
         if self._isabstract:
-            assert not len(self._statements)
             w.line0(f"){rettype};")
         else:
             w.line0(f"){rettype} {{")
@@ -1561,6 +1572,7 @@ class ClassSpec(_StatementWithCustomImports):
         yield from self._importsts
 
         for prop in self._properties:
+            # TODO: also need to yield imports from properties
             if prop.tsobservable:
                 # TODO: unit test this code path
                 yield "mobx", ["observable"]
