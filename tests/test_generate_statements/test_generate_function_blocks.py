@@ -294,8 +294,8 @@ def test_FunctionSpec_overloads(LANG: SupportedLang) -> None:
 
 def test_abstract_FunctionSpec_cannot_have_statements(LANG: SupportedLang) -> None:
     s = Script()
-    c = s.also(ClassSpec('Class1'))
-    method = c.createMethod('fun1', CrossNull(), isabstract=True)
+    c = s.also(ClassSpec("Class1"))
+    method = c.createMethod("fun1", CrossNull(), isabstract=True)
     method.alsoReturn(pan(None))
     # FIXME: the InvalidLogic exception isn't raised until we attempt to generate the final code
     with pytest.raises(InvalidLogic, match="Abstract FunctionSpec.*must not have any statements"):
