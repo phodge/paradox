@@ -27,6 +27,7 @@ from paradox.interfaces import (
     ImportSpecPHP,
     ImportSpecPy,
     ImportSpecTS,
+    InvalidLogic,
     NotSupportedError,
     WantsImports,
 )
@@ -1212,7 +1213,10 @@ class FunctionSpec(Statements):
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
             havebody = True
-            assert not self._isabstract, "Abstract FunctionSpec must not have any statements"
+            if self._isabstract:
+                raise InvalidLogic(
+                    f"Abstract FunctionSpec {self._name}() must not have any statements"
+                )
 
         if not havebody:
             w.line1("..." if self._isabstract else "pass")
@@ -1232,6 +1236,11 @@ class FunctionSpec(Statements):
             modifiers.append("async")
 
         if self._isabstract:
+            if len(self._statements):
+                raise InvalidLogic(
+                    f"Abstract FunctionSpec {self._name}() must not have any statements"
+                )
+
             modifiers.append("abstract")
 
         if self._isstaticmethod:
@@ -1274,7 +1283,6 @@ class FunctionSpec(Statements):
                 rettype = "Promise<" + rettype + ">"
 
         if self._isabstract:
-            assert not len(self._statements)
             w.line0(f"): {rettype};" if rettype else ");")
         else:
             w.line0(f"): {rettype} {{" if rettype else ") {")
@@ -1294,6 +1302,11 @@ class FunctionSpec(Statements):
             w.line0(" */")
 
         if self._isabstract:
+            if len(self._statements):
+                raise InvalidLogic(
+                    f"Abstract FunctionSpec {self._name}() must not have any statements"
+                )
+
             modifiers.append("abstract")
 
         if self._isstaticmethod:
@@ -1337,7 +1350,6 @@ class FunctionSpec(Statements):
             rettype = ": " + rettype
 
         if self._isabstract:
-            assert not len(self._statements)
             w.line0(f"){rettype};")
         else:
             w.line0(f"){rettype} {{")
@@ -1389,22 +1401,22 @@ class ClassProperty:
 
 
 class ClassSpec(_StatementWithCustomImports):
+    _pybases_args_kwargs: bool = False
+    _phpbase: Optional[str] = None
+    _tsbase: Optional[str] = None
+
     def __init__(
         self,
         name: str,
         *,
-        # TODO: `bases` is just for python now, so we should rename it
-        bases: List[str] = None,
         docstring: List[str] = None,
         isabstract: bool = False,
         isdataclass: bool = False,
         tsexport: bool = False,
-        tsbase: str = None,
     ) -> None:
         super().__init__()
 
         self._name = name
-        self._bases = bases or []
         self._docstring = docstring
         self._isabstract = isabstract
         self._isdataclass = isdataclass
@@ -1413,14 +1425,35 @@ class ClassSpec(_StatementWithCustomImports):
         self._remarks: List[str] = []
         self._properties: List[ClassProperty] = []
         self._initargs: List[Tuple[str, CrossType, Optional[PanExpr]]] = []
-        self._initdefaults: List[Tuple[str, PanExpr]] = []
+        self._initdefaults: List[Tuple[str, PanExpr, CrossType]] = []
         self._decorators: List[str] = []
         self._tsexport: bool = tsexport
-        self._tsbase: Optional[str] = tsbase
+        self._pybases: List[str] = []
 
     @property
     def classname(self) -> str:
         return self._name
+
+    def addPythonBaseClass(self, name: str, *, send_args_kwargs: bool = False) -> None:
+        # TODO: I'm not super happy about this send_args_kwargs feature, but I've added it as a
+        # short-term fix for backwards compatibility
+        if send_args_kwargs:
+            self._pybases_args_kwargs = True
+        elif self._pybases_args_kwargs:
+            # TODO: unit test this code path
+            raise InvalidLogic("Cannot use send_args_kwargs=False and send_args_kwargs=True")
+
+        self._pybases.append(name)
+
+    def setPHPParentClass(self, name: str) -> None:
+        if self._phpbase:
+            raise InvalidLogic("Cannot add multiple PHP parent classes")
+        self._phpbase = name
+
+    def setTypeScriptParentClass(self, name: str) -> None:
+        if self._tsbase:
+            raise InvalidLogic("Cannot add multiple TypeScript parent classes")
+        self._tsbase = name
 
     def createMethod(
         self,
@@ -1459,7 +1492,7 @@ class ClassSpec(_StatementWithCustomImports):
         if initarg:
             self._initargs.append((name, crosstype, realdefault))
         elif realdefault is not None:
-            self._initdefaults.append((name, realdefault))
+            self._initdefaults.append((name, realdefault, crosstype))
 
         self._properties.append(
             ClassProperty(
@@ -1493,29 +1526,31 @@ class ClassSpec(_StatementWithCustomImports):
             )
             initspec.alsoAssign(PanProp(name, crosstype, None), PanVar(name, None))
 
-        if self._bases and lang == "python":
+        if self._pybases_args_kwargs and lang == "python":
+            # TODO: unit test this code path
             initspec.addPositionalArg("*args", CrossAny())
             initspec.addPositionalArg("**kwargs", CrossAny())
 
-        # also call super's init
-        if self._bases:
-            initspec.also(
-                HardCodedStatement(
-                    python="super().__init__(*args, **kwargs)",
-                    typescript="super();",
-                    php="parent::__construct();",
-                )
-            )
-        elif self._tsbase and lang == "typescript":
-            initspec.also(
-                HardCodedStatement(
-                    typescript="super();",
-                )
-            )
+        # also call parent class' init
+        call_parent_constructor: Dict[str, Optional[str]] = {
+            "php": None,
+            "python": None,
+            "typescript": None,
+        }
+        if self._pybases_args_kwargs:
+            # TODO: unit test this code path
+            call_parent_constructor["python"] = "super().__init__(*args, **kwargs)"
+        elif self._pybases:
+            call_parent_constructor["python"] = "super().__init__()"
+        if self._tsbase:
+            call_parent_constructor["typescript"] = "super();"
+        if self._phpbase:
+            call_parent_constructor["php"] = "parent::__construct();"
+        initspec.also(HardCodedStatement(**call_parent_constructor))
 
         # do we need positional args for any of the properties?
-        for name, default in initdefaults:
-            initspec.alsoAssign(PanProp(name, CrossAny(), None), default)
+        for name, default, crosstype in initdefaults:
+            initspec.alsoAssign(PanProp(name, crosstype, None), default)
 
         return initspec
 
@@ -1537,7 +1572,9 @@ class ClassSpec(_StatementWithCustomImports):
         yield from self._importsts
 
         for prop in self._properties:
+            # TODO: also need to yield imports from properties
             if prop.tsobservable:
+                # TODO: unit test this code path
                 yield "mobx", ["observable"]
                 break
         constructor = self._getInitSpec("typescript")
@@ -1562,7 +1599,7 @@ class ClassSpec(_StatementWithCustomImports):
 
     def writepy(self, w: FileWriter) -> None:
         havebody = False
-        bases = self._bases[:]
+        bases = self._pybases[:]
 
         # write out class header
         if self._isabstract:
@@ -1683,9 +1720,8 @@ class ClassSpec(_StatementWithCustomImports):
             w.line0(" */")
 
         extends = ""
-        if len(self._bases):
-            assert len(self._bases) <= 1
-            extends = " extends " + self._bases[0]
+        if self._phpbase:
+            extends = " extends " + self._phpbase
 
         w.line0(f"{prefix}class {self._name}{extends} {{")
 

@@ -4,13 +4,15 @@ import pytest
 
 from _paradoxtest import SupportedLang
 from paradox.expressions import PanStringBuilder, exacteq_, not_, or_, pan
-from paradox.interfaces import NotSupportedError
+from paradox.generate.statements import ClassSpec
+from paradox.interfaces import InvalidLogic, NotSupportedError
 from paradox.output import Script
 from paradox.typing import (
     CrossAny,
     CrossBool,
     CrossList,
     CrossLiteral,
+    CrossNull,
     CrossNum,
     CrossStr,
     maybe,
@@ -288,6 +290,16 @@ def test_FunctionSpec_overloads(LANG: SupportedLang) -> None:
     generated = script.get_source_code(lang=LANG, pretty=False)
 
     assert generated == dedent(expected).lstrip()
+
+
+def test_abstract_FunctionSpec_cannot_have_statements(LANG: SupportedLang) -> None:
+    s = Script()
+    c = s.also(ClassSpec('Class1'))
+    method = c.createMethod('fun1', CrossNull(), isabstract=True)
+    method.alsoReturn(pan(None))
+    # FIXME: the InvalidLogic exception isn't raised until we attempt to generate the final code
+    with pytest.raises(InvalidLogic, match="Abstract FunctionSpec.*must not have any statements"):
+        s.get_source_code(lang=LANG)
 
 
 # TODO: add unit tests for FunctionSpec with isasync=True

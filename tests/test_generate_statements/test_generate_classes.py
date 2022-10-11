@@ -5,7 +5,6 @@ from paradox.expressions import PanCall, pan
 from paradox.generate.statements import NO_DEFAULT, ClassSpec
 from paradox.output import Script
 from paradox.typing import (
-    CrossAny,
     CrossCustomType,
     CrossNull,
     dictof,
@@ -29,7 +28,11 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
     prop2 = c.addProperty("prop2", int, default=79, initarg=True)
 
     # create a Factory method
-    factoryfn = c.createMethod("sixtysix", CrossAny(), isstaticmethod=True)
+    factoryfn = c.createMethod(
+        "sixtysix",
+        CrossCustomType(python="Class1", typescript="Class1", phplang="Class1", phpdoc="Class1"),
+        isstaticmethod=True,
+    )
     factoryfn.alsoReturn(PanCall.callClassConstructor("Class1", pan(66)))
 
     # other method with body
@@ -67,7 +70,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
                 }
 
                 static public function sixtysix(
-                ) {
+                ): Class1 {
                     return new Class1(66);
                 }
 
@@ -87,7 +90,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
             """
     elif LANG == "python":
         expected = '''
-            from typing import Any, Literal, Union
+            from typing import Literal, Union
 
             class Class1:
                 """
@@ -112,7 +115,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
                 @classmethod
                 def sixtysix(
                     class_,
-                ) -> Any:
+                ) -> 'Class1':
                     return Class1(66)
 
 
@@ -149,7 +152,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
                 }
 
                 static sixtysix(
-                ): any {
+                ): Class1 {
                     return new Class1(66);
                 }
 
@@ -238,6 +241,128 @@ def test_ClassSpec_abstract(LANG: SupportedLang) -> None:
     assert c.classname == "Class2"
 
 
+def test_ClassSpec_base_classes_and_imports(LANG: SupportedLang) -> None:
+    s = Script()
+
+    c_pet = s.also(ClassSpec("Pet", docstring=["A kind of animal"]))
+    c_pet.addPythonBaseClass("Animal")
+    c_pet.setPHPParentClass("Animal")
+    c_pet.setTypeScriptParentClass("Animal")
+    c_pet.alsoImportPy("animals", ["Animal"])
+    # TODO: add support for setting parent's initargs?
+    c_pet.addProperty("species", str, initarg=True)
+
+    c_dog = s.also(ClassSpec("Dog", docstring=["A dog that is a pet."]))
+    c_dog.addPythonBaseClass("Pet")
+    c_dog.addPythonBaseClass("Animal")
+    c_dog.setPHPParentClass("Pet")
+    c_dog.setTypeScriptParentClass("Pet")
+    c_dog.addProperty("name", str, initarg=True)
+
+    source_code = s.get_source_code(lang=LANG)
+
+    if LANG == "php":
+        expected = """
+            <?php
+
+            /**
+             * A kind of animal
+             */
+            class Pet extends Animal {
+                /** @var string */
+                public $species;
+
+                public function __construct(
+                    string $species
+                ) {
+                    $this->species = $species;
+                    parent::__construct();
+                }
+            }
+            /**
+             * A dog that is a pet.
+             */
+            class Dog extends Pet {
+                /** @var string */
+                public $name;
+
+                public function __construct(
+                    string $name
+                ) {
+                    $this->name = $name;
+                    parent::__construct();
+                }
+            }
+            """
+    elif LANG == "python":
+        expected = '''
+            from animals import Animal
+
+            class Pet(Animal):
+                """
+                A kind of animal
+                """
+
+                species: str
+
+
+                def __init__(
+                    self,
+                    species: str,
+                ) -> None:
+                    self.species = species
+                    super().__init__()
+
+            class Dog(Pet, Animal):
+                """
+                A dog that is a pet.
+                """
+
+                name: str
+
+
+                def __init__(
+                    self,
+                    name: str,
+                ) -> None:
+                    self.name = name
+                    super().__init__()
+
+            '''
+    else:
+        assert LANG == "typescript"
+        expected = """
+            /**
+             * A kind of animal
+             */
+            class Pet extends Animal {
+                public species: string;
+
+                public constructor(
+                    species: string,
+                ) {
+                    this.species = species;
+                    super();
+                }
+            }
+            /**
+             * A dog that is a pet.
+             */
+            class Dog extends Pet {
+                public name: string;
+
+                public constructor(
+                    name: string,
+                ) {
+                    this.name = name;
+                    super();
+                }
+            }
+            """
+
+    assert source_code == dedent(expected).lstrip()
+
+
 def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
     s = Script()
 
@@ -256,7 +381,6 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
     p_num = c.addProperty("num", maybe(int), initarg=True)
 
     # create a Factory method
-    # TODO: replace CrossAny() with the class' type when we work out what that should look like
     factoryfn = c.createMethod(
         "random",
         CrossCustomType(
