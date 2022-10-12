@@ -669,7 +669,7 @@ class TryCatchBlock(Statements):
     @contextmanager
     def withFinallyBlock(self) -> Iterator[FinallyBlock]:
         if self._finallyblock:
-            raise Exception("Cannot have multiple FinallyBlocks under a single TryCatchBlock")
+            raise InvalidLogic("Cannot have multiple FinallyBlocks under a single TryCatchBlock")
 
         block = FinallyBlock()
         self._finallyblock = block

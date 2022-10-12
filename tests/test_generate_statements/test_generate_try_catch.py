@@ -1,7 +1,10 @@
 from textwrap import dedent
 
+import pytest
+
 from _paradoxtest import SupportedLang
 from paradox.expressions import PanCall, PanVar, pan
+from paradox.interfaces import InvalidLogic
 from paradox.output import Script
 
 
@@ -96,3 +99,14 @@ def test_generate_try_catch(LANG: SupportedLang) -> None:
         ).lstrip()
 
     assert s.get_source_code(lang=LANG) == expected
+
+
+def test_multiple_finally_blocks_not_allowed(LANG: SupportedLang) -> None:
+    s = Script()
+    with s.withTryBlock() as tryblock:
+        with tryblock.withFinallyBlock():
+            pass
+
+        with pytest.raises(InvalidLogic, match='multiple FinallyBlocks'):
+            with tryblock.withFinallyBlock():
+                pass
