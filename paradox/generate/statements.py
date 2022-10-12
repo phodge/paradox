@@ -440,12 +440,12 @@ class SimpleRaise(StatementWithNoImports):
         return 1
 
     def writets(self, w: FileWriter) -> None:
-        assert self._ctor is None, "Custom Exception constructor not allowed for TS"
+        ctor = self._ctor or "Error"
         if self._msg is None:
             assert self._expr is not None
-            line = f"throw new Error({self._expr.getPyExpr()[0]})"
+            line = f"throw new {ctor}({self._expr.getPyExpr()[0]});"
         else:
-            line = f"throw new Error({self._msg!r})"
+            line = f"throw new {ctor}({self._msg!r});"
         w.line0(line)
 
     def writephp(self, w: FileWriter) -> None:
@@ -612,10 +612,7 @@ class CatchBlock2(Statements):
         raise Exception("TODO: CatchBlock2 is not directly written")  # noqa
 
     def writephp(self, w: FileWriter) -> None:
-        if not self._phpclass:
-            raise Exception("CatchBlock2 cannot be turned to PHP without a phpclass")
-
-        intro = "} catch (" + self._phpclass
+        intro = "} catch (" + (self._phpclass or "Exception")
         intro += " $" + (self._var.rawname if self._var else "_")
         intro += ") {"
         w.line0(intro)
@@ -633,7 +630,9 @@ class FinallyBlock(Statements):
         return 1
 
     def writets(self, w: FileWriter) -> None:
-        raise Exception("TODO: FinallyBlock is not finished")
+        w.line0("} finally {")
+        for stmt in self._statements:
+            stmt.writets(w.with_more_indent())
 
     def writephp(self, w: FileWriter) -> None:
         w.line0("} finally {")
