@@ -86,7 +86,7 @@ class Statement(WantsImports, DefinesCustomTypes, abc.ABC):
         self._newtypes.append((name, base, export))
 
     @abc.abstractmethod
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         ...
 
     @abc.abstractmethod
@@ -276,9 +276,11 @@ class Statements(_StatementWithCustomImports, AcceptsStatements):
         self._statements.append(loop)
         yield loop
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
+        written = 0
         for stmt in self._statements:
-            stmt.writepy(w)
+            written += stmt.writepy(w)
+        return written
 
     def writets(self, w: FileWriter) -> None:
         for stmt in self._statements:
@@ -306,8 +308,9 @@ class Comment(StatementWithNoImports):
 
         self._text = text
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         w.line0("# " + self._text)
+        return 0
 
     def writets(self, w: FileWriter) -> None:
         w.line0("// " + self._text)
@@ -317,8 +320,9 @@ class Comment(StatementWithNoImports):
 
 
 class BlankLine(StatementWithNoImports):
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         w.blank()
+        return 0
 
     def writets(self, w: FileWriter) -> None:
         w.blank()
@@ -336,8 +340,9 @@ class PanExprStatement(StatementWithNoImports):
     def writets(self, w: FileWriter) -> None:
         w.line0(self._expr.getTSExpr()[0] + ";")
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         w.line0(self._expr.getPyExpr()[0])
+        return 1
 
     def writephp(self, w: FileWriter) -> None:
         w.line0(self._expr.getPHPExpr()[0] + ";")
@@ -366,12 +371,16 @@ class HardCodedStatement(StatementWithNoImports):
             # XXX: mypy doesn't realise that self._typescript cannot be ...
             w.line0(self._typescript)  # type: ignore
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         if self._python is ...:
             raise ImplementationMissing("HardCodedStatement was not given a Python implementation")
-        if self._python is not None:
-            # XXX: mypy doesn't realise that self._python cannot be ...
-            w.line0(self._python)  # type: ignore
+
+        if self._python is None:
+            return 0
+
+        # XXX: mypy doesn't realise that self._python cannot be ...
+        w.line0(self._python)  # type: ignore
+        return 1
 
     def writephp(self, w: FileWriter) -> None:
         if self._php is ...:
@@ -397,7 +406,7 @@ class RawTypescript(StatementWithNoImports):
         for stmt in self._lines:
             w.line0(stmt)
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         raise Exception("Not implemented in Python")
 
     def writephp(self, w: FileWriter) -> None:
@@ -418,7 +427,7 @@ class SimpleRaise(StatementWithNoImports):
         self._msg = msg
         self._expr = expr
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         ctor = "Exception"
         if self._ctor is not None:
             ctor = self._ctor
@@ -428,6 +437,7 @@ class SimpleRaise(StatementWithNoImports):
         else:
             line = f"raise {ctor}({self._msg!r})"
         w.line0(line)
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         assert self._ctor is None, "Custom Exception constructor not allowed for TS"
@@ -478,16 +488,20 @@ class ConditionalBlock(Statements):
         self._else = stmts
         yield stmts
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         w.line0(f"if {self._expr.getPyExpr()[0]}:")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
+
+        # TODO: if none of self._statements wrote a line of code, we should inject a 'pass'
+
         if self._alternates:
             raise NotImplementedError("TODO: support 'elif' in python")
         if self._else:
             raise NotImplementedError("TODO: support 'else' in python")
         # always put a blank line after a conditional
         w.blank()
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         w.line0(f"if ({self._expr.getTSExpr()[0]}) {{")
@@ -524,7 +538,7 @@ class CatchBlock(Statements):
         self.catchexpr = catchexpr
         self.catchvar = catchvar
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         intro = "except"
         if self.catchexpr:
             intro += " " + self.catchexpr
@@ -534,6 +548,10 @@ class CatchBlock(Statements):
         w.line0(intro)
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
+
+        # TODO: if none of self._statements wrote a line of code, we should inject a 'pass'
+
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         raise Exception("TODO: CatchBlock (original) doesn't do typescript")  # noqa
@@ -569,7 +587,7 @@ class CatchBlock2(Statements):
         self._tsclass = tsclass
         self._phpclass = phpclass
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         # XXX: remember that for Python you almost certainly don't want a bare "except:" as that
         # would catch process signals and such.
         if self._pyclass:
@@ -580,8 +598,15 @@ class CatchBlock2(Statements):
             intro += " as " + self._var.getPyExpr()[0]
         intro += ":"
         w.line0(intro)
+        body_count = 0
         for stmt in self._statements:
-            stmt.writepy(w.with_more_indent())
+            body_count += stmt.writepy(w.with_more_indent())
+
+        # TODO: this logic needs to be copied across to other types of Statements
+        if not body_count:
+            w.line1("pass")
+
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         raise Exception("TODO: CatchBlock2 is not directly written")  # noqa
@@ -599,10 +624,13 @@ class CatchBlock2(Statements):
 
 
 class FinallyBlock(Statements):
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         w.line0("finally:")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
+
+        # TODO: inject 'pass' statement if there no statements wrote a body
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         raise Exception("TODO: FinallyBlock is not finished")
@@ -648,10 +676,12 @@ class TryCatchBlock(Statements):
         self._finallyblock = block
         yield block
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         w.line0("try:")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
+
+        # TODO: if none of self._statements wrote a line of code, we should inject a 'pass'
 
         # catch blocks
         for cb in self._catchblocks:
@@ -661,6 +691,8 @@ class TryCatchBlock(Statements):
         if self._finallyblock:
             # write out finally: block without increasing indent
             self._finallyblock.writepy(w)
+
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         w.line0(f"try {{")
@@ -675,25 +707,42 @@ class TryCatchBlock(Statements):
         catchall: Optional[CatchBlock2] = None
         for cb in self._catchblocks:
             assert isinstance(cb, CatchBlock2)
-            assert cb._var is not None
-
-            # TODO: get rid of this dirty hack
-            if catchvar is None:
+            if cb._var is None:
+                pass
+            elif catchvar is None:
                 catchvar = cb._var._name
-            else:
-                assert cb._var._name == catchvar
+            elif cb._var._name != catchvar:
+                # TODO: unit test this code path
+                raise InvalidLogic(
+                    "Every CatchBlock2 must have the same varname for generating TypeScript"
+                )
 
             if cb._tsclass:
                 catchspecific.append(cb)
+            elif catchall is not None:
+                # TODO: unit test this code path
+                raise InvalidLogic(
+                    "Cannot have multiple CatchBlock2 with no TypeScript exception type specified",
+                )
             else:
                 catchall = cb
-        assert catchvar is not None
+        if catchvar is None and len(catchspecific):
+            # TODO: test this code path
+            raise InvalidLogic(
+                "at least one CatchBlock2 must have a varname for generating typescript"
+            )
 
         w.line0(f"}} catch ({catchvar}) {{")
         if catchspecific:
+            first = True
             for cb in catchspecific:
                 assert isinstance(cb, CatchBlock2)
-                w.line1(f"if ({catchvar} instanceof {cb._tsclass}) {{")
+                if first:
+                    construct = "if"
+                    first = False
+                else:
+                    construct = "} else if"
+                w.line1(f"{construct} ({catchvar} instanceof {cb._tsclass}) {{")
                 for stmt in cb._statements:
                     stmt.writets(w.with_more_indent().with_more_indent())
             if catchall:
@@ -711,6 +760,10 @@ class TryCatchBlock(Statements):
             assert catchall is not None
             for stmt in catchall._statements:
                 stmt.writets(w.with_more_indent())
+
+        if self._finallyblock:
+            # write out finally: block without increasing indent
+            self._finallyblock.writets(w)
 
         w.line0(f"}}")
 
@@ -746,7 +799,7 @@ class DictLoopBlock(Statements):
         self._expr = expr
         self._statements: List[Statement] = statements or []
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         v_val = self._v_val.getPyExpr()[0]
         if self._v_key:
             v_key = self._v_key.getPyExpr()[0]
@@ -755,8 +808,12 @@ class DictLoopBlock(Statements):
             w.line0(f"for {v_val} in ({self._expr.getPyExpr()[0]}).values():")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
+
+        # TODO: if none of self._statements wrote a line of code, we should inject a 'pass'
+
         # always put a blank line after a for loop
         w.blank()
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         raise Exception("TODO: implement this for TS")  # noqa
@@ -786,12 +843,16 @@ class ForLoopBlock(Statements):
         self._expr = expr
         self._statements: List[Statement] = statements or []
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         w.line0(f"for {self._assign.getPyExpr()[0]} in {self._expr.getPyExpr()[0]}:")
         for stmt in self._statements:
             stmt.writepy(w.with_more_indent())
+
+        # TODO: if none of self._statements wrote a line of code, we should inject a 'pass'
+
         # always put a blank line after a for loop
         w.blank()
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         w.line0(f"for (let {self._assign.getTSExpr()[0]} of {self._expr.getTSExpr()[0]}) {{")
@@ -818,11 +879,12 @@ class ReturnStatement(StatementWithNoImports):
 
         self._expr = expr
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         if isinstance(self._expr, PanOmit):
             w.line0("return")
         else:
             w.line0("return " + self._expr.getPyExpr()[0])
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         if isinstance(self._expr, PanOmit):
@@ -844,7 +906,7 @@ class ListAppendStatement(StatementWithNoImports):
         self._list: PanExpr = list_
         self._value: PanExpr = value
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         raise Exception("TODO: finish python code")  # noqa
 
     def writets(self, w: FileWriter) -> None:
@@ -888,7 +950,7 @@ class AssignmentStatement(Statement):
             pantype: CrossType = self._target.getPanType()
             yield from pantype.getPyImports()
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         left = self._target.getPyExpr()[0]
         if self._declare and self._declaretype:
             left += ": " + self._target.getPanType().getQuotedPyType()
@@ -896,6 +958,7 @@ class AssignmentStatement(Statement):
             w.line0(left)
         else:
             w.line0(f"{left} = {self._expr.getPyExpr()[0]}")
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         left = self._target.getTSExpr()[0]
@@ -958,7 +1021,7 @@ class DictBuilderStatement(Statement):
     def addPair(self, key: str, allowomit: bool) -> None:
         self._keys.append((key, allowomit))
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         inner = ", ".join([f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit])
 
         varstr = self._var.getPyExpr()[0]
@@ -972,6 +1035,7 @@ class DictBuilderStatement(Statement):
                 expr = pannotomit(PanVar(k, None))
                 w.line0(f"if {expr.getPyExpr()[0]}:")
                 w.line1(f"{varstr}[{k!r}] = {k}")
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         inner = ", ".join([f"{k!r}: {k}" for k, allowomit in self._keys if not allowomit])
@@ -1156,7 +1220,7 @@ class FunctionSpec(Statements):
         target.append((name, crosstype, default))
         return PanVar(name, crosstype)
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         assert not self._isasync, "async FunctionSpec not yet supported in Python"
 
         # first write out overloads
@@ -1201,18 +1265,17 @@ class FunctionSpec(Statements):
         else:
             w.line0(f") -> {self._rettype.getQuotedPyType()}:")
 
-        havebody = False
+        havebody = 0
 
         if self._docstring:
             w.line1('"""')
             for docline in self._docstring:
                 w.line1(docline)
             w.line1('"""')
-            havebody = True
+            havebody += 1
 
         for stmt in self._statements:
-            stmt.writepy(w.with_more_indent())
-            havebody = True
+            havebody += stmt.writepy(w.with_more_indent())
             if self._isabstract:
                 raise InvalidLogic(
                     f"Abstract FunctionSpec {self._name}() must not have any statements"
@@ -1220,6 +1283,8 @@ class FunctionSpec(Statements):
 
         if not havebody:
             w.line1("..." if self._isabstract else "pass")
+
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         if self._docstring:
@@ -1597,7 +1662,7 @@ class ClassSpec(_StatementWithCustomImports):
     def remark(self, comment: str) -> None:
         self._remarks.append(comment)
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         havebody = False
         bases = self._pybases[:]
 
@@ -1645,6 +1710,8 @@ class ClassSpec(_StatementWithCustomImports):
 
         if not havebody:
             w.line1("pass")
+
+        return 1
 
     def writets(self, w: FileWriter) -> None:
         if self._docstring:
@@ -1802,7 +1869,7 @@ class InterfaceSpec(_StatementWithCustomImports):
             pass
         return []
 
-    def writepy(self, w: FileWriter) -> None:
+    def writepy(self, w: FileWriter) -> int:
         raise NotSupportedError("InterfaceSpec can't generate python code")
 
     def writets(self, w: FileWriter) -> None:
