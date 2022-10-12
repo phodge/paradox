@@ -707,25 +707,42 @@ class TryCatchBlock(Statements):
         catchall: Optional[CatchBlock2] = None
         for cb in self._catchblocks:
             assert isinstance(cb, CatchBlock2)
-            assert cb._var is not None
-
-            # TODO: get rid of this dirty hack
-            if catchvar is None:
+            if cb._var is None:
+                pass
+            elif catchvar is None:
                 catchvar = cb._var._name
-            else:
-                assert cb._var._name == catchvar
+            elif cb._var._name != catchvar:
+                # TODO: unit test this code path
+                raise InvalidLogic(
+                    "Every CatchBlock2 must have the same varname for generating TypeScript"
+                )
 
             if cb._tsclass:
                 catchspecific.append(cb)
+            elif catchall is not None:
+                # TODO: unit test this code path
+                raise InvalidLogic(
+                    "Cannot have multiple CatchBlock2 with no TypeScript exception type specified",
+                )
             else:
                 catchall = cb
-        assert catchvar is not None
+        if catchvar is None and len(catchspecific):
+            # TODO: test this code path
+            raise InvalidLogic(
+                "at least one CatchBlock2 must have a varname for generating typescript"
+            )
 
         w.line0(f"}} catch ({catchvar}) {{")
         if catchspecific:
+            first = True
             for cb in catchspecific:
                 assert isinstance(cb, CatchBlock2)
-                w.line1(f"if ({catchvar} instanceof {cb._tsclass}) {{")
+                if first:
+                    construct = "if"
+                    first = False
+                else:
+                    construct = "} else if"
+                w.line1(f"{construct} ({catchvar} instanceof {cb._tsclass}) {{")
                 for stmt in cb._statements:
                     stmt.writets(w.with_more_indent().with_more_indent())
             if catchall:
@@ -743,6 +760,10 @@ class TryCatchBlock(Statements):
             assert catchall is not None
             for stmt in catchall._statements:
                 stmt.writets(w.with_more_indent())
+
+        if self._finallyblock:
+            # write out finally: block without increasing indent
+            self._finallyblock.writets(w)
 
         w.line0(f"}}")
 

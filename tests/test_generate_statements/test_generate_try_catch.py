@@ -1,40 +1,95 @@
-from pathlib import Path
-from subprocess import PIPE, run
-from tempfile import TemporaryDirectory
+from textwrap import dedent
 
-import pytest
-
-from paradox.expressions import phpexpr
+from _paradoxtest import SupportedLang
+from paradox.expressions import PanCall, PanVar, pan
+from paradox.output import Script
 
 
-@pytest.mark.parametrize("outcome", ["normal", "exception1", "exception2"])
-def test_generate_try_catch_php(outcome: str) -> None:
-    from paradox.generate.files import FilePHP
+def test_generate_try_catch(LANG: SupportedLang) -> None:
+    s = Script()
 
-    with TemporaryDirectory() as tmpdir:
-        scriptpath = Path(tmpdir, "script.php")
-        script = FilePHP(scriptpath)
-        with script.contents.withTryBlock() as tryblock:
-            if outcome == "exception1":
-                tryblock.alsoRaise("RuntimeException", msg="some message")
-            elif outcome == "exception2":
-                tryblock.alsoRaise("LogicException", msg="some message")
-            tryblock.also(phpexpr('echo "inside try block\\n"'))
+    with s.withTryBlock() as tryblock:
+        tryblock.also(PanCall("do_something", pan("some text")))
+        tryblock.alsoRaise("SomeException", msg="some message")
 
-            with tryblock.withCatchBlock2(None, phpclass="RuntimeException") as catchblock:
-                catchblock.also(phpexpr('echo "got RuntimeException\\n"'))
-            with tryblock.withCatchBlock2(None, phpclass="LogicException") as catchblock:
-                catchblock.also(phpexpr('echo "got LogicException\\n"'))
-            with tryblock.withFinallyBlock() as finallyblock:
-                finallyblock.also(phpexpr('echo "END\\n"'))
+        v_e = PanVar("e", None)
+        with tryblock.withCatchBlock2(
+            None,
+            phpclass="SomeException",
+            pyclass="SomeException",
+            tsclass="SomeException",
+        ) as catchblock:
+            catchblock.also(PanCall("alt_behaviour_1"))
+        with tryblock.withCatchBlock2(
+            v_e, phpclass="LogicException", pyclass="LogicException", tsclass="LogicException",
+        ) as catchblock:
+            catchblock.also(PanCall("log_something_bad", v_e))
+        with tryblock.withCatchBlock2() as catchblock:
+            catchblock.remark("XXX: ignore silently for now")
+        with tryblock.withFinallyBlock() as finallyblock:
+            finallyblock.also(PanCall("do_cleanup"))
 
-        script.writefile()
+    # TODO: would be good to ensure that python puts 'pass' into an empty
+    # finally block
 
-        result = run(["php", scriptpath], stdout=PIPE, check=True, encoding="utf-8")
+    # TODO: would be good to ensure that a try/except with no contents raises
+    # InvalidLogic
 
-    if outcome == "exception1":
-        assert result.stdout == "got RuntimeException\nEND\n"
-    elif outcome == "exception2":
-        assert result.stdout == "got LogicException\nEND\n"
+    if LANG == "php":
+        expected = dedent(
+            """
+            <?php
+
+            try {
+                do_something('some text');
+                throw new SomeException('some message');
+            } catch (SomeException $_) {
+                alt_behaviour_1();
+            } catch (LogicException $e) {
+                log_something_bad($e);
+            } catch (Exception $_) {
+                // XXX: ignore silently for now
+            } finally {
+                do_cleanup();
+            }
+            """
+        ).lstrip()
+    elif LANG == "python":
+        expected = dedent(
+            """
+            try:
+                do_something('some text')
+                raise SomeException('some message')
+            except SomeException:
+                alt_behaviour_1()
+            except LogicException as e:
+                log_something_bad(e)
+            except Exception:
+                # XXX: ignore silently for now
+                pass
+            finally:
+                do_cleanup()
+            """
+        ).lstrip()
     else:
-        assert result.stdout == "inside try block\nEND\n"
+        assert LANG == "typescript"
+        expected = dedent(
+            """
+            try {
+                do_something('some text');
+                throw new SomeException('some message');
+            } catch (e) {
+                if (e instanceof SomeException) {
+                    alt_behaviour_1();
+                } else if (e instanceof LogicException) {
+                    log_something_bad(e);
+                } else {
+                    // XXX: ignore silently for now
+                }
+            } finally {
+                do_cleanup();
+            }
+            """
+        ).lstrip()
+
+    assert s.get_source_code(lang=LANG) == expected
