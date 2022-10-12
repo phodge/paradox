@@ -21,7 +21,10 @@ def test_generate_try_catch(LANG: SupportedLang) -> None:
         ) as catchblock:
             catchblock.also(PanCall("alt_behaviour_1"))
         with tryblock.withCatchBlock2(
-            v_e, phpclass="LogicException", pyclass="LogicException", tsclass="LogicException",
+            v_e,
+            phpclass="LogicException",
+            pyclass="LogicException",
+            tsclass="LogicException",
         ) as catchblock:
             catchblock.also(PanCall("log_something_bad", v_e))
         with tryblock.withCatchBlock2() as catchblock:
