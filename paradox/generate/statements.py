@@ -985,7 +985,7 @@ class AssignmentStatement(Statement):
 
 class DictBuilderStatement(Statement):
     _var: PanVar
-    _type: CrossType
+    _type: CrossDict
 
     @classmethod
     def fromPanVar(cls, var: PanVar) -> "DictBuilderStatement":
@@ -997,7 +997,8 @@ class DictBuilderStatement(Statement):
         super().__init__()
 
         keytype = unflex(keytype)
-        assert isinstance(keytype, CrossStr), "Only str keys are currently supported"
+        if not isinstance(keytype, CrossStr):
+            raise NotSupportedError("Only str keys are currently supported")
         realtype = CrossDict(keytype, unflex(valtype))
 
         if isinstance(var, str):
@@ -1009,7 +1010,9 @@ class DictBuilderStatement(Statement):
         self._keys: List[Tuple[str, bool]] = []
 
     def getImportsPy(self) -> Iterable[ImportSpecPy]:
-        yield "typing", None
+        yield from super().getImportsPy()
+        yield from self._type.getValueType().getPyImports()
+        yield "typing", "Dict"
 
     def getImportsTS(self) -> Iterable[ImportSpecTS]:
         return []
@@ -1046,7 +1049,8 @@ class DictBuilderStatement(Statement):
         # now do the omittable args
         for k, allowomit in self._keys:
             if allowomit:
-                w.line0(f'if (typeof {k} !== "undefined") {{')
+                expr = pannotomit(PanVar(k, None))
+                w.line0(f"if ({expr.getTSExpr()[0]}) {{")
                 w.line1(f"{varstr}[{k!r}] = {k};")
                 w.line0(f"}}")
 
@@ -1069,7 +1073,7 @@ class DictBuilderStatement(Statement):
         # now do the omittable args
         for k, allowomit in self._keys:
             if allowomit:
-                raise Exception("omittable args aren't supported by PHP")
+                raise NotSupportedError("omittable args aren't supported by PHP")
 
 
 class FunctionSpec(Statements):
