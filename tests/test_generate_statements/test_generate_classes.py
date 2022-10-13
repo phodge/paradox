@@ -19,6 +19,9 @@ from paradox.typing import (
 
 
 def test_ClassSpec(LANG: SupportedLang) -> None:
+    # TODO: add tests for the following ClassSpec features
+    # .createMethod()
+    #   isasync
     s = Script()
 
     c = s.also(
@@ -201,6 +204,7 @@ def test_ClassSpec_abstract(LANG: SupportedLang) -> None:
             isabstract=True,
         )
     )
+    # TODO: NO_DEFAULT probably belongs in paradox.interfaces or even root paradox
     c.addProperty("meta1", int, default=NO_DEFAULT)
     am = c.createMethod("abstract_method", unionof(str, int), isabstract=True)
     am.addPositionalArg("a", listof(int))
