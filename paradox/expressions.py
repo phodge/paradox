@@ -1040,9 +1040,9 @@ def tsexpr(code: str, prec: TSPrecedence = TSPrecedence.MultDiv) -> PanTSOnly:
 
 
 def pannotomit(expr: Pannable) -> PanExpr:
-    return PanPyOnly(
-        f"not isinstance({pan(expr).getPyExpr()[0]}, type(...))",
-        PyPrecedence.AddSub,
+    return HardCodedExpr(
+        getpy=lambda: f"not isinstance({pan(expr).getPyExpr()[0]}, type(...))",
+        getts=lambda: f"typeof {_wrapdot(pan(expr).getPyExpr())} !== 'undefined'",
     )
 
 
