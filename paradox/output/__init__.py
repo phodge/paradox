@@ -1,9 +1,10 @@
 import io
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Iterator, List, Literal, Optional, Union
+from typing import IO, TYPE_CHECKING, Dict, Iterator, List, Literal, Optional, Union
 
-from paradox.interfaces import AcceptsStatements, AlsoParam
+from paradox.interfaces import AcceptsStatements, AlsoParam, InvalidLogic
 
 if TYPE_CHECKING:
     import builtins
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
         ForLoopBlock,
         TryCatchBlock,
     )
-    from paradox.typing import FlexiType
+    from paradox.typing import CrossType, FlexiType
 
 
 class FileWriter:
@@ -65,10 +66,16 @@ class Script(AcceptsStatements):
         # implement WantsImports as well
         self._content = Statements()
         self._file_comments: List[str] = []
+        self._new_types: Dict[str, NewTypeDetails] = {}
 
     def add_file_comment(self, text: str) -> None:
         """Supercedes the old FileSpec.filecomment()"""
         self._file_comments.append(text)
+
+    def add_new_type(self, name: str, base: "CrossType", *, tsexport: bool = False) -> None:
+        if name in self._new_types:
+            raise InvalidLogic(f"Cannot add two new types named {name!r}")
+        self._new_types[name] = NewTypeDetails(name, base, tsexport=tsexport)
 
     def also(self, stmt: AlsoParam) -> AlsoParam:
         return self._content.also(stmt)
@@ -229,9 +236,9 @@ class Script(AcceptsStatements):
             writer.line0(f"namespace {phpnamespace};")
             writer.blank()
 
-        write_top_imports(writer, self._content)
+        write_top_imports(writer, top=self._content, script=self)
 
-        write_custom_types(writer, self._content)
+        write_custom_types(writer, script=self)
 
         if lang == "php":
             self._content.writephp(writer)
@@ -240,3 +247,10 @@ class Script(AcceptsStatements):
         else:
             assert lang == "typescript"
             self._content.writets(writer)
+
+
+@dataclass
+class NewTypeDetails:
+    name: str
+    base: "CrossType"
+    tsexport: bool

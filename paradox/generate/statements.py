@@ -33,7 +33,6 @@ from paradox.expressions import (
 from paradox.interfaces import (
     AcceptsStatements,
     AlsoParam,
-    DefinesCustomTypes,
     ImplementationMissing,
     ImportSpecPHP,
     ImportSpecPy,
@@ -72,30 +71,7 @@ def _pan_nodef(val: Union[Pannable, NoDefault]) -> Optional[PanExpr]:
     return pan(val)
 
 
-class Statement(WantsImports, DefinesCustomTypes, abc.ABC):
-    def __init__(self) -> None:
-        super().__init__()
-        self._newtypes: List[Tuple[str, CrossType, bool]] = []
-
-    def getTypesPy(self) -> Iterable[Tuple[str, CrossType]]:
-        """Yield tuples of <type name> <base type name>
-
-        ... where <base type name> would be something a str like 'int' or 'bool'.
-        """
-        for name, crossbase, export in self._newtypes:
-            yield name, crossbase
-
-    def getTypesTS(self) -> Iterable[Tuple[str, CrossType, bool]]:
-        """Yield tuples of <type name> <base type name> <want export>
-
-        ... where <base type name> would be a str like 'number' or 'boolean'.
-        """
-        for name, crossbase, export in self._newtypes:
-            yield name, crossbase, export
-
-    def addNewType(self, name: str, base: CrossType, *, export: bool = False) -> None:
-        self._newtypes.append((name, base, export))
-
+class Statement(WantsImports, abc.ABC):
     @abc.abstractmethod
     def writepy(self, w: FileWriter) -> int:
         ...
