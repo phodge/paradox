@@ -3,7 +3,18 @@ import builtins
 import itertools
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Iterable, Iterator, List, Literal, Optional, Tuple, Union, cast
+from typing import (
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 from paradox.expressions import (
     PanExpr,
@@ -1488,6 +1499,7 @@ class ClassSpec(_StatementWithCustomImports):
         self._docstring = docstring
         self._isabstract = isabstract
         self._isdataclass = isdataclass
+        self._propnames: Set[str] = set()
 
         self._methods: List[FunctionSpec] = []
         self._remarks: List[str] = []
@@ -1555,6 +1567,12 @@ class ClassSpec(_StatementWithCustomImports):
         tsobservable: bool = False,
         tsreadonly: bool = False,
     ) -> PanProp:
+        if name in self._propnames:
+            raise InvalidLogic(
+                f"Tried to add property {name} to ClassSpec {self._name} multiple times"
+            )
+        self._propnames.add(name)
+
         crosstype = unflex(type)
         realdefault = _pan_nodef(default)
         if initarg:

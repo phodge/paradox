@@ -1,8 +1,11 @@
 from textwrap import dedent
 
+import pytest
+
 from _paradoxtest import SupportedLang
 from paradox.expressions import PanCall, pan
 from paradox.generate.statements import NO_DEFAULT, ClassSpec
+from paradox.interfaces import InvalidLogic
 from paradox.output import Script
 from paradox.typing import (
     CrossCustomType,
@@ -173,6 +176,13 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
 
     assert source_code == dedent(expected).lstrip()
     assert c.classname == "Class1"
+
+
+def test_ClassSpec_cannot_add_same_prop_multiple_times(LANG: SupportedLang) -> None:
+    c = ClassSpec("SomeClass")
+    c.addProperty("some_prop", str)
+    with pytest.raises(InvalidLogic):
+        c.addProperty("some_prop", str)
 
 
 def test_ClassSpec_abstract(LANG: SupportedLang) -> None:
