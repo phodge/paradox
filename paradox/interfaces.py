@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         Statement,
         TryCatchBlock,
     )
-    from paradox.typing import CrossType, FlexiType
+    from paradox.typing import FlexiType
 
 
 class NotSupportedError(NotImplementedError):
@@ -148,13 +148,3 @@ class WantsImports(abc.ABC):
         # XXX: we need to return an iterable here so that subclasses can use
         #   yield from super().getImportsPHP()
         return []
-
-
-class DefinesCustomTypes(abc.ABC):
-    @abc.abstractmethod
-    def getTypesPy(self) -> "Iterable[Tuple[str, CrossType]]":
-        ...
-
-    @abc.abstractmethod
-    def getTypesTS(self) -> "Iterable[Tuple[str, CrossType, bool]]":
-        ...

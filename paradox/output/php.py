@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
-from paradox.interfaces import DefinesCustomTypes, WantsImports
-from paradox.output import FileWriter
+from paradox.interfaces import WantsImports
+from paradox.output import FileWriter, Script
 
 
 def write_file_comments(writer: FileWriter, comments: List[str]) -> None:
@@ -14,7 +14,7 @@ def write_file_comments(writer: FileWriter, comments: List[str]) -> None:
         writer.blank()
 
 
-def write_top_imports(writer: FileWriter, top: WantsImports) -> None:
+def write_top_imports(writer: FileWriter, *, top: WantsImports, script: Script) -> None:
     # group imports by source module so that we can sort them
     imports: Dict[str, Optional[str]] = {}
     for original, alias in top.getImportsPHP():
@@ -35,6 +35,6 @@ def write_top_imports(writer: FileWriter, top: WantsImports) -> None:
         writer.blank()
 
 
-def write_custom_types(writer: FileWriter, top: DefinesCustomTypes) -> None:
+def write_custom_types(writer: FileWriter, script: Script) -> None:
     # PHP doesn't support custom types
     pass

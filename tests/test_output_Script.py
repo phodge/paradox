@@ -3,14 +3,21 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from textwrap import dedent
 
+import pytest
+
 from _paradoxtest import SupportedLang
 from paradox.expressions import PanCall, pan
+from paradox.interfaces import InvalidLogic
+from paradox.output import Script
+from paradox.typing import maybe, unflex
 
 
 def test_Script(LANG: SupportedLang) -> None:
-    from paradox.output import Script
-
     s = Script()
+
+    # add some new types
+    s.add_new_type('UserEmail', maybe(str))
+    s.add_new_type('UserID', unflex(int), tsexport=True)
 
     s.add_file_comment("Intro1")
     s.add_file_comment("Intro2")
@@ -44,6 +51,11 @@ def test_Script(LANG: SupportedLang) -> None:
 
             Intro3
             """
+            from typing import NewType, Optional
+
+            UserEmail = NewType('UserEmail', Optional[str])
+            UserID = NewType('UserID', int)
+
             if True:
               some_fn()
 
@@ -55,6 +67,9 @@ def test_Script(LANG: SupportedLang) -> None:
             // Intro2
             //
             // Intro3
+            type UserEmail = string | null & {readonly brand: unique symbol};
+            export type UserID = number & {readonly brand: unique symbol};
+
             if (true) {
               some_fn();
             }
@@ -80,3 +95,11 @@ def test_Script(LANG: SupportedLang) -> None:
         s.write_to_path(scriptpath, lang=LANG, indentstr="  ")
         written = scriptpath.read_text()
         assert written == dedent(expected).lstrip()
+
+
+def test_cannot_add_same_new_type_twice() -> None:
+    s = Script()
+
+    s.add_new_type('some_type', unflex(str))
+    with pytest.raises(InvalidLogic):
+        s.add_new_type('some_type', unflex(str))
