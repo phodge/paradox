@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import Dict, List, Optional, Set
 
-from paradox.interfaces import DefinesCustomTypes, WantsImports
-from paradox.output import FileWriter
+from paradox.interfaces import WantsImports
+from paradox.output import FileWriter, Script
 
 
 def write_file_comments(writer: FileWriter, comments: List[str]) -> None:
@@ -13,7 +13,7 @@ def write_file_comments(writer: FileWriter, comments: List[str]) -> None:
             writer.line0("//")
 
 
-def write_top_imports(writer: FileWriter, top: WantsImports) -> None:
+def write_top_imports(writer: FileWriter, *, top: WantsImports, script: Script) -> None:
     # group imports by source module so that we can remove duplicates
     imports_by_module: Dict[str, Set[Optional[str]]] = defaultdict(set)
     for module, names in top.getImportsTS():
@@ -36,14 +36,16 @@ def write_top_imports(writer: FileWriter, top: WantsImports) -> None:
         writer.blank()
 
 
-def write_custom_types(writer: FileWriter, top: DefinesCustomTypes) -> None:
+def write_custom_types(writer: FileWriter, script: Script) -> None:
     havenewtypes = False
-    for newtype, crossbase, export in top.getTypesTS():
+    for newtype in script._new_types.values():
         havenewtypes = True
         prefix = ""
-        if export:
+        if newtype.tsexport:
             prefix = "export "
-        tstype = crossbase.getTSType()[0]
-        writer.line0(prefix + f"type {newtype} = {tstype} & {{readonly brand: unique symbol}};")
+        tstype = newtype.base.getTSType()[0]
+        writer.line0(
+            prefix + f"type {newtype.name} = {tstype} & {{readonly brand: unique symbol}};"
+        )
     if havenewtypes:
         writer.blank()
