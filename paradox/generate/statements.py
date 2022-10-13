@@ -1490,7 +1490,7 @@ class ClassSpec(_StatementWithCustomImports):
         *,
         docstring: List[str] = None,
         isabstract: bool = False,
-        isdataclass: bool = False,
+        pydataclass: bool = False,
         tsexport: bool = False,
     ) -> None:
         super().__init__()
@@ -1498,7 +1498,7 @@ class ClassSpec(_StatementWithCustomImports):
         self._name = name
         self._docstring = docstring
         self._isabstract = isabstract
-        self._isdataclass = isdataclass
+        self._pydataclass = pydataclass
         self._propnames: Set[str] = set()
 
         self._methods: List[FunctionSpec] = []
@@ -1644,8 +1644,8 @@ class ClassSpec(_StatementWithCustomImports):
         yield from super().getImportsPy()
         if self._isabstract:
             yield "abc", None
-        if self._isdataclass:
-            yield "dataclasses", None
+        if self._pydataclass:
+            yield "dataclasses", "dataclass"
         constructor = self._getInitSpec("python")
         if constructor:
             yield from constructor.getImportsPy()
@@ -1690,8 +1690,8 @@ class ClassSpec(_StatementWithCustomImports):
         # write out class header
         if self._isabstract:
             bases.append("abc.ABC")
-        if self._isdataclass:
-            w.line0("@dataclasses.dataclass")
+        if self._pydataclass:
+            w.line0("@dataclass")
 
         parents = ", ".join(bases)
         if parents:
