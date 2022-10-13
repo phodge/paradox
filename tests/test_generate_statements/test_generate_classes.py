@@ -529,3 +529,46 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
             """
 
     assert source_code == dedent(expected).lstrip()
+
+
+def test_ClassSpec_typescript_features(LANG: SupportedLang) -> None:
+    s = Script()
+
+    c = s.also(ClassSpec("Class1", tsexport=True))
+    c.addProperty("locked_prop", str, tsreadonly=True)
+    c.addProperty("watchable_prop", str, tsobservable=True)
+
+    source_code = s.get_source_code(lang=LANG)
+
+    if LANG == "php":
+        expected = """
+            <?php
+
+            class Class1 {
+                /** @var string */
+                public $locked_prop;
+                /** @var string */
+                public $watchable_prop;
+            }
+            """
+    elif LANG == "python":
+        expected = """
+            class Class1:
+                locked_prop: str
+                watchable_prop: str
+
+            """
+    else:
+        assert LANG == "typescript"
+        expected = """
+            import {observable} from 'mobx';
+
+            export class Class1 {
+                readonly locked_prop: string;
+
+                @observable
+                public watchable_prop: string;
+            }
+            """
+
+    assert source_code == dedent(expected).lstrip()
