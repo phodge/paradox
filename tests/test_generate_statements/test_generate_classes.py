@@ -531,10 +531,10 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
     assert source_code == dedent(expected).lstrip()
 
 
-def test_ClassSpec_typescript_features(LANG: SupportedLang) -> None:
+def test_ClassSpec_typescript_and_python_features(LANG: SupportedLang) -> None:
     s = Script()
 
-    c = s.also(ClassSpec("Class1", tsexport=True))
+    c = s.also(ClassSpec("Class1", tsexport=True, pydataclass=True))
     c.addProperty("locked_prop", str, tsreadonly=True)
     c.addProperty("watchable_prop", str, tsobservable=True)
 
@@ -553,6 +553,9 @@ def test_ClassSpec_typescript_features(LANG: SupportedLang) -> None:
             """
     elif LANG == "python":
         expected = """
+            from dataclasses import dataclass
+
+            @dataclass
             class Class1:
                 locked_prop: str
                 watchable_prop: str
