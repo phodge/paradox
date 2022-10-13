@@ -1,13 +1,16 @@
 import abc
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from paradox.output import Script
 
 # imported for backwards-compatibility
 # isort: off
 from paradox.output import FileWriter  # noqa: F401
+
+if TYPE_CHECKING:
+    from paradox.typing import CrossType
 
 
 class FileSpec(abc.ABC):
@@ -24,6 +27,9 @@ class FileSpec(abc.ABC):
 
         with self.target.open() as f:
             return f.readline()
+
+    def add_new_type(self, name: str, base: "CrossType", *, tsexport: bool = False) -> None:
+        self.contents.add_new_type(name, base, tsexport=tsexport)
 
     @abc.abstractmethod
     def writefile(self) -> None:

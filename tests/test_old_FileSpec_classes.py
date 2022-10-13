@@ -5,6 +5,8 @@ from typing import Iterator, Optional
 
 import pytest
 
+from paradox.typing import CrossNum
+
 
 @pytest.fixture
 def tmppath() -> Iterator[Path]:
@@ -34,6 +36,7 @@ def test_FilePHP_produces_php(tmppath: Path, namespace: Optional[str]) -> None:
 
     # NOTE: comments in paradox.output.php.write_custom_types() states that PHP does not support
     # custom types
+    fp.add_new_type('UserID', CrossNum())
 
     linebreak = ""
     nsline = ""
@@ -81,6 +84,9 @@ def test_FilePython_produces_python(tmppath: Path) -> None:
     # Note: use of maybe() here should cause an import of typing.Optional
     fp.contents.alsoDeclare("z", maybe(int), PanCall("len", pan("five")))
 
+    # demonstrate that we can still add custom types
+    fp.add_new_type('UserID', CrossNum())
+
     fp.writefile()
 
     assert (
@@ -91,7 +97,9 @@ def test_FilePython_produces_python(tmppath: Path) -> None:
             This is a test script
             Use it for testing
             """
-            from typing import Optional
+            from typing import NewType, Optional
+
+            UserID = NewType('UserID', int)
 
             if False:
                 len('')
@@ -122,6 +130,9 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
 
     fp.contents.alsoDeclare("z", CrossList(unflex(int)), PanList([pan(1770)], CrossAny()))
 
+    # demonstrate that we can still add custom types
+    fp.add_new_type('UserID', CrossNum())
+
     fp.writefile()
 
     assert (
@@ -130,6 +141,8 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
             """
             // This is a test script
             // Use it for testing
+            type UserID = number & {readonly brand: unique symbol};
+
             if (false) {
               alert('hello, world');
             }
