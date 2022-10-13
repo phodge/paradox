@@ -16,8 +16,8 @@ def test_Script(LANG: SupportedLang) -> None:
     s = Script()
 
     # add some new types
-    s.add_new_type('UserEmail', maybe(str))
-    s.add_new_type('UserID', unflex(int), tsexport=True)
+    s.add_new_type("UserEmail", maybe(str))
+    s.add_new_type("UserID", unflex(int), tsexport=True)
 
     s.add_file_comment("Intro1")
     s.add_file_comment("Intro2")
@@ -100,6 +100,6 @@ def test_Script(LANG: SupportedLang) -> None:
 def test_cannot_add_same_new_type_twice() -> None:
     s = Script()
 
-    s.add_new_type('some_type', unflex(str))
+    s.add_new_type("some_type", unflex(str))
     with pytest.raises(InvalidLogic):
-        s.add_new_type('some_type', unflex(str))
+        s.add_new_type("some_type", unflex(str))
