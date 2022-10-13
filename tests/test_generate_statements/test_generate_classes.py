@@ -27,6 +27,7 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
             docstring=["A", "Wicked", "Cool", "Class"],
         )
     )
+    c.remark("This comment will appear at the end")
     c.addProperty("prop1", str, default="why?")
     prop2 = c.addProperty("prop2", int, default=79, initarg=True)
 
@@ -89,6 +90,8 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
 
                     return -1;
                 }
+                // This comment will appear at the end
+
             }
             """
     elif LANG == "python":
@@ -134,6 +137,8 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
 
                     return -1
 
+                # This comment will appear at the end
+
             '''
     else:
         assert LANG == "typescript"
@@ -171,6 +176,8 @@ def test_ClassSpec(LANG: SupportedLang) -> None:
 
                     return -1;
                 }
+                // This comment will appear at the end
+
             }
             """
 
