@@ -385,7 +385,7 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
 
     c = s.also(ClassSpec("NumberBox"))
     c.alsoImportPy("readline")
-    # TODO: also test Typescript imports
+    c.alsoImportTS("math-fns", ["strict_mode"])
     # TODO: also test PHP imports
 
     # adding this property should force the script to import module1.Foo as
@@ -409,6 +409,7 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
         PanCall.callClassConstructor("NumberBox", PanCall("get_random_int", pan(1), pan(10)))
     )
     factoryfn.alsoImportPy("math_fns", ["get_random_int"])
+    factoryfn.alsoImportTS("math-fns", ["get_random_int"])
 
     # other method with body
     printnum = c.createMethod(
@@ -419,7 +420,7 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
     v_wanted = printnum.addPositionalArg("wanted", lit(True, False))
     with printnum.withCond(v_wanted) as cond:
         cond.alsoImportPy("print_fns", ["print_line", "format_msg"])
-        # TODO: add tests for Typescript imports
+        cond.alsoImportTS("print_fns", ["print_line", "format_msg"])
         # TODO: add tests for PHP imports
         cond.also(PanCall("print_line", PanCall("format_msg", p_num)))
 
@@ -496,6 +497,11 @@ def test_ClassSpec_imports_everything(LANG: SupportedLang) -> None:
     else:
         assert LANG == "typescript"
         expected = """
+            import {get_random_int} from 'math-fns';
+            import {strict_mode} from 'math-fns';
+            import {format_msg} from 'print_fns';
+            import {print_line} from 'print_fns';
+
             class NumberBox {
                 public some_prop: Array<Foo>;
                 public num: number | null;
