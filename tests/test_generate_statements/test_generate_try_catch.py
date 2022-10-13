@@ -107,6 +107,6 @@ def test_multiple_finally_blocks_not_allowed(LANG: SupportedLang) -> None:
         with tryblock.withFinallyBlock():
             pass
 
-        with pytest.raises(InvalidLogic, match='multiple FinallyBlocks'):
+        with pytest.raises(InvalidLogic, match="multiple FinallyBlocks"):
             with tryblock.withFinallyBlock():
                 pass
