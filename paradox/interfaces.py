@@ -46,6 +46,10 @@ class InvalidLogic(Exception):
     """Raised when statements/expressions construction is not valid."""
 
 
+class TypeMissing(Exception):
+    """Raised by PanExpr.getPanType() when there is no type information."""
+
+
 AlsoParam = TypeVar("AlsoParam", bound="Union[Statement, PanExpr]")
 
 

@@ -39,6 +39,7 @@ from paradox.interfaces import (
     ImportSpecTS,
     InvalidLogic,
     NotSupportedError,
+    TypeMissing,
     WantsImports,
 )
 from paradox.output import FileWriter
@@ -481,11 +482,17 @@ class ConditionalBlock(Statements):
             stmt.writepy(w.with_more_indent())
 
         # TODO: if none of self._statements wrote a line of code, we should inject a 'pass'
+        for altexpr, altstmt in self._alternates:
+            w.line0(f"elif {altexpr.getPyExpr()[0]}:")
+            if not altstmt.writepy(w.with_more_indent()):
+                w.line1("pass")
 
-        if self._alternates:
-            raise NotImplementedError("TODO: support 'elif' in python")
         if self._else:
-            raise NotImplementedError("TODO: support 'else' in python")
+            w.line0(f"else:")
+            if not self._else.writepy(w.with_more_indent()):
+                # TODO: test this code path
+                w.line1("pass")
+
         # always put a blank line after a conditional
         w.blank()
         return 1
@@ -494,10 +501,15 @@ class ConditionalBlock(Statements):
         w.line0(f"if ({self._expr.getTSExpr()[0]}) {{")
         for stmt in self._statements:
             stmt.writets(w.with_more_indent())
-        if self._alternates:
-            raise NotImplementedError("TODO: support 'else if' in typescript")
+
+        for altexpr, altstmt in self._alternates:
+            w.line0(f"}} else if ({altexpr.getTSExpr()[0]}) {{")
+            altstmt.writets(w.with_more_indent())
+
         if self._else:
-            raise NotImplementedError("TODO: support 'else' in typescript")
+            w.line0(f"}} else {{")
+            self._else.writets(w.with_more_indent())
+
         w.line0("}")
 
         # always put a blank line after a conditional
@@ -507,11 +519,15 @@ class ConditionalBlock(Statements):
         w.line0(f"if ({self._expr.getPHPExpr()[0]}) {{")
         for stmt in self._statements:
             stmt.writephp(w.with_more_indent())
-        if self._alternates:
-            raise NotImplementedError("TODO: support 'elseif' in PHP")
+
+        for altexpr, altstmt in self._alternates:
+            w.line0(f"}} elseif ({altexpr.getPHPExpr()[0]}) {{")
+            altstmt.writephp(w.with_more_indent())
+
         if self._else:
             w.line0(f"}} else {{")
             self._else.writephp(w.with_more_indent())
+
         w.line0("}")
 
         # always put a blank line after a conditional
@@ -922,6 +938,15 @@ class AssignmentStatement(Statement):
         self._expr: Optional[PanExpr] = expr
         self._declare: bool = declare
         self._declaretype: bool = declaretype
+
+        if declare and declaretype:
+            try:
+                # make sure the target has type information
+                self._target.getPanType()
+            except TypeMissing:
+                raise InvalidLogic(
+                    f"{self.__class__.__name__} target does not have type information"
+                )
 
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
         # no imports are required for declaring a PHP type

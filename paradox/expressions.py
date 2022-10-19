@@ -13,7 +13,7 @@ from typing import (
     Union,
 )
 
-from paradox.interfaces import NotSupportedError
+from paradox.interfaces import NotSupportedError, TypeMissing
 from paradox.typing import (
     CrossAny,
     CrossBool,
@@ -117,7 +117,9 @@ class PanExpr(abc.ABC):
 
     @abc.abstractmethod
     def getPanType(self) -> CrossType:
-        """Return a CrossType representing the type of the expression."""
+        """Return a CrossType representing the type of the expression.
+
+        Raises TypeMissing if the PanExpr is missing type information."""
 
     @abc.abstractmethod
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
@@ -507,7 +509,7 @@ class PanVar(PanExpr):
 
     def getPanType(self) -> CrossType:
         if self._type is None:
-            raise Exception(f"PanVar {self._name} has no type")
+            raise TypeMissing(f"PanVar {self._name} has no type")
         return self._type
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
@@ -620,6 +622,7 @@ class PanCall(PanExpr):
         self._kwargs[argname] = expr
 
     def getPanType(self) -> CrossType:
+        # TODO: implement this?
         raise NotImplementedError()
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
@@ -714,6 +717,7 @@ class PanStringBuilder(PanExpr):
         return " . ".join(parts), PHPPrecedence.MultDiv
 
 
+# TODO: remove this in favour of HardCodedExpr()
 class PanTSOnly(PanExpr):
     def __init__(self, code: str, precedence: TSPrecedence = TSPrecedence.MultDiv) -> None:
         self._code = code
@@ -732,6 +736,7 @@ class PanTSOnly(PanExpr):
         raise Exception("PanTSOnly is unable to produce a PHP expression")
 
 
+# TODO: remove this in favour of HardCodedExpr()
 class PanPyOnly(PanExpr):
     def __init__(self, code: str, precedence: PyPrecedence = PyPrecedence.MultDiv) -> None:
         self._code = code
@@ -750,6 +755,7 @@ class PanPyOnly(PanExpr):
         raise Exception(f"PanPyOnly('{self._code}') is unable to produce a PHP expression")
 
 
+# TODO: remove this in favour of HardCodedExpr()
 class PanPHPOnly(PanExpr):
     def __init__(self, code: str, precedence: PHPPrecedence = PHPPrecedence.MultDiv) -> None:
         self._code = code
@@ -959,7 +965,9 @@ class HardCodedExpr(PanExpr):
         self._type = type
 
     def getPanType(self) -> CrossType:
-        return self._type or CrossAny()
+        if self._type:
+            return self._type
+        raise TypeMissing("HardCodedExpr was not given a `type`")
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
         if not self._getpy:
