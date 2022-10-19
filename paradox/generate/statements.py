@@ -39,6 +39,7 @@ from paradox.interfaces import (
     ImportSpecTS,
     InvalidLogic,
     NotSupportedError,
+    TypeMissing,
     WantsImports,
 )
 from paradox.output import FileWriter
@@ -922,6 +923,15 @@ class AssignmentStatement(Statement):
         self._expr: Optional[PanExpr] = expr
         self._declare: bool = declare
         self._declaretype: bool = declaretype
+
+        if declare and declaretype:
+            try:
+                # make sure the target has type information
+                self._target.getPanType()
+            except TypeMissing:
+                raise InvalidLogic(
+                    f"{self.__class__.__name__} target does not have type information"
+                )
 
     def getImportsPHP(self) -> Iterable[ImportSpecPHP]:
         # no imports are required for declaring a PHP type
