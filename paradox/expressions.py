@@ -622,6 +622,7 @@ class PanCall(PanExpr):
         self._kwargs[argname] = expr
 
     def getPanType(self) -> CrossType:
+        # TODO: implement this?
         raise NotImplementedError()
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
@@ -716,6 +717,7 @@ class PanStringBuilder(PanExpr):
         return " . ".join(parts), PHPPrecedence.MultDiv
 
 
+# TODO: remove this in favour of HardCodedExpr()
 class PanTSOnly(PanExpr):
     def __init__(self, code: str, precedence: TSPrecedence = TSPrecedence.MultDiv) -> None:
         self._code = code
@@ -734,6 +736,7 @@ class PanTSOnly(PanExpr):
         raise Exception("PanTSOnly is unable to produce a PHP expression")
 
 
+# TODO: remove this in favour of HardCodedExpr()
 class PanPyOnly(PanExpr):
     def __init__(self, code: str, precedence: PyPrecedence = PyPrecedence.MultDiv) -> None:
         self._code = code
@@ -752,6 +755,7 @@ class PanPyOnly(PanExpr):
         raise Exception(f"PanPyOnly('{self._code}') is unable to produce a PHP expression")
 
 
+# TODO: remove this in favour of HardCodedExpr()
 class PanPHPOnly(PanExpr):
     def __init__(self, code: str, precedence: PHPPrecedence = PHPPrecedence.MultDiv) -> None:
         self._code = code
