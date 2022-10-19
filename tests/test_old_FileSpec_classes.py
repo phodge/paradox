@@ -36,7 +36,7 @@ def test_FilePHP_produces_php(tmppath: Path, namespace: Optional[str]) -> None:
 
     # NOTE: comments in paradox.output.php.write_custom_types() states that PHP does not support
     # custom types
-    fp.add_new_type('UserID', CrossNum())
+    fp.add_new_type("UserID", CrossNum())
 
     linebreak = ""
     nsline = ""
@@ -85,7 +85,7 @@ def test_FilePython_produces_python(tmppath: Path) -> None:
     fp.contents.alsoDeclare("z", maybe(int), PanCall("len", pan("five")))
 
     # demonstrate that we can still add custom types
-    fp.add_new_type('UserID', CrossNum())
+    fp.add_new_type("UserID", CrossNum())
 
     fp.writefile()
 
@@ -131,7 +131,7 @@ def test_FileTS_produces_typescript(tmppath: Path) -> None:
     fp.contents.alsoDeclare("z", CrossList(unflex(int)), PanList([pan(1770)], CrossAny()))
 
     # demonstrate that we can still add custom types
-    fp.add_new_type('UserID', CrossNum())
+    fp.add_new_type("UserID", CrossNum())
 
     fp.writefile()
 
