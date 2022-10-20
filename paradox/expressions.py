@@ -839,7 +839,7 @@ class PanNot(PanExpr):
         else:
             return neg.getTSExpr()
 
-        return "not " + _wrapmult(self._arg.getTSExpr()), TSPrecedence.MultDiv
+        return "!" + _wrapmult(self._arg.getTSExpr()), TSPrecedence.MultDiv
 
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         try:
