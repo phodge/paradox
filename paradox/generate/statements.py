@@ -26,6 +26,8 @@ from paradox.expressions import (
     PanProp,
     PanVar,
     PHPPrecedence,
+    PyPrecedence,
+    TSPrecedence,
     pan,
     pannotomit,
     pyexpr,
@@ -909,14 +911,21 @@ class ListAppendStatement(StatementWithNoImports):
         self._value: PanExpr = value
 
     def writepy(self, w: FileWriter) -> int:
-        raise Exception("TODO: finish python code")  # noqa
+        list_, prec = self._list.getPyExpr()
+        if prec.value >= PyPrecedence.MultDiv.value:
+            list_ = "(" + list_ + ")"
+        w.line0(list_ + ".append(" + self._value.getPyExpr()[0] + ")")
+        return 1
 
     def writets(self, w: FileWriter) -> None:
-        raise Exception("TODO: finish TS code")  # noqa
+        list_, prec = self._list.getTSExpr()
+        if prec.value >= TSPrecedence.MultDiv.value:
+            list_ = "(" + list_ + ")"
+        w.line0(list_ + ".push(" + self._value.getTSExpr()[0] + ");")
 
     def writephp(self, w: FileWriter) -> None:
         list_, prec = self._list.getPHPExpr()
-        if prec.value >= PHPPrecedence.Arrow.value:
+        if prec.value > PHPPrecedence.Arrow.value:
             list_ = "(" + list_ + ")"
         w.line0(list_ + "[] = " + self._value.getPHPExpr()[0] + ";")
 
