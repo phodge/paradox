@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "paradox-codegen"
-version = "0.18.1"
+version = "0.18.2"
 description = ""
 license = "MIT"
 authors = []
