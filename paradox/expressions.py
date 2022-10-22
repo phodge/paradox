@@ -115,6 +115,31 @@ class PanExpr(abc.ABC):
     def getNegated(self) -> "PanExpr":
         raise NotImplementedError()
 
+    def __getitem__(self, idx: Union[int, str]) -> "Union[PanIndexAccess, PanKeyAccess]":
+        return self.getitem(idx)
+
+    def getitem(
+        self,
+        idx: "Union[int, str, PanExpr]",
+        fallback: "PanExpr" = None,
+    ) -> "Union[PanIndexAccess, PanKeyAccess]":
+        if isinstance(idx, PanExpr):
+            if isinstance(self.getPanType(), CrossList):
+                return PanIndexAccess(self, idx)
+            return PanKeyAccess(self, idx)
+
+        if isinstance(idx, int):
+            assert idx == 0
+            assert isinstance(self.getPanType(), CrossList)
+            # TODO: check type of fallback if it is present
+            return PanIndexAccess(self, idx, fallback)
+
+        assert isinstance(idx, str)
+        selftype = self.getPanType()
+        assert isinstance(selftype, CrossDict) or isinstance(selftype, CrossAny)
+        # TODO: check type of fallback if it is present
+        return PanKeyAccess(self, idx, fallback)
+
     def getindex(
         self,
         idx: "Union[int, PanExpr]",
@@ -160,6 +185,13 @@ class PanExpr(abc.ABC):
         you are trying to make an expression from two other expressions you may need to wrap one in
         parenthesis if the PHPPrecedence is too high.
         """
+
+    def getprop(self, propname: str, type: FlexiType = None) -> "PanProp":
+        if type is None:
+            type = CrossAny()
+        else:
+            type = unflex(type)
+        return PanProp(propname, type, self)
 
 
 class PanLiteral(PanExpr):
@@ -531,39 +563,12 @@ class PanVar(PanExpr):
     def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
         return "$" + self._name, PHPPrecedence.Literal
 
-    def __getitem__(self, idx: Union[int, str]) -> Union[PanIndexAccess, PanKeyAccess]:
-        return self.getitem(idx)
-
-    def getprop(self, propname: str, type: FlexiType) -> "PanProp":
-        return PanProp(propname, unflex(type), self)
-
-    def getitem(
-        self,
-        idx: Union[int, str, PanExpr],
-        fallback: PanExpr = None,
-    ) -> Union[PanIndexAccess, PanKeyAccess]:
-        if isinstance(idx, PanExpr):
-            if isinstance(self._type, CrossList):
-                return PanIndexAccess(self, idx)
-            return PanKeyAccess(self, idx)
-
-        if isinstance(idx, int):
-            assert idx == 0
-            assert isinstance(self._type, CrossList)
-            # TODO: check type of fallback if it is present
-            return PanIndexAccess(self, idx, fallback)
-
-        assert isinstance(idx, str)
-        assert isinstance(self._type, CrossDict) or isinstance(self._type, CrossAny)
-        # TODO: check type of fallback if it is present
-        return PanKeyAccess(self, idx, fallback)
-
 
 class PanProp(PanVar):
-    def __init__(self, name: str, type: CrossType, owner: Optional[PanVar]) -> None:
+    def __init__(self, name: str, type: CrossType, owner: Optional[PanExpr]) -> None:
         super().__init__(name, type)
 
-        self._owner: Optional[PanVar] = owner
+        self._owner: Optional[PanExpr] = owner
 
     def getPyExpr(self) -> Tuple[str, PyPrecedence]:
         if self._owner is None:
