@@ -115,6 +115,16 @@ class PanExpr(abc.ABC):
     def getNegated(self) -> "PanExpr":
         raise NotImplementedError()
 
+    def getindex(
+        self,
+        idx: "Union[int, PanExpr]",
+        fallback: "PanExpr" = None,
+    ) -> "PanIndexAccess":
+        selftype = self.getPanType()
+        assert isinstance(selftype, CrossList) or isinstance(selftype, CrossAny)
+        # TODO: check type of fallback if it is present
+        return PanIndexAccess(self, idx, fallback)
+
     @abc.abstractmethod
     def getPanType(self) -> CrossType:
         """Return a CrossType representing the type of the expression.
