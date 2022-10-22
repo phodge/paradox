@@ -475,6 +475,8 @@ class PanIndexAccess(_PanItemAccess):
 
     def getPanType(self) -> CrossType:
         targettype = self._target.getPanType()
+        if isinstance(targettype, CrossAny):
+            return CrossAny()
         assert isinstance(targettype, CrossList)
         return targettype.getWrappedType()
 
@@ -530,6 +532,8 @@ class PanKeyAccess(_PanItemAccess):
 
     def getPanType(self) -> CrossType:
         targettype = self._target.getPanType()
+        if isinstance(targettype, CrossAny):
+            return CrossAny()
         assert isinstance(targettype, CrossDict)
         return targettype.getValueType()
 
