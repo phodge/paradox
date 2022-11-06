@@ -150,20 +150,20 @@ def test_PanKeyAccess() -> None:
 
 def test_PanAwait() -> None:
     # verify it generates the correct code for each language
-    call1 = PanCall('some_func')
-    v_foo = PanVar('foo', CrossAny())
-    call2 = PanCall(v_foo.getprop('some_method'), pan(5))
-    assert PanAwait(call1).getPyExpr()[0] == 'await some_func()'
-    assert PanAwait(call1).getTSExpr()[0] == 'await some_func()'
-    assert PanAwait(call2).getPyExpr()[0] == 'await foo.some_method(5)'
-    assert PanAwait(call2).getTSExpr()[0] == 'await foo.some_method(5)'
+    call1 = PanCall("some_func")
+    v_foo = PanVar("foo", CrossAny())
+    call2 = PanCall(v_foo.getprop("some_method"), pan(5))
+    assert PanAwait(call1).getPyExpr()[0] == "await some_func()"
+    assert PanAwait(call1).getTSExpr()[0] == "await some_func()"
+    assert PanAwait(call2).getPyExpr()[0] == "await foo.some_method(5)"
+    assert PanAwait(call2).getTSExpr()[0] == "await foo.some_method(5)"
 
     # verify not supported under PHP
     with pytest.raises(NotSupportedError, match="PHP does not support"):
         PanAwait(call1).getPHPExpr()
 
     # verify its getPanType() method works as expected
-    v_bar = PanVar('bar', listof(str))
+    v_bar = PanVar("bar", listof(str))
     waittype = PanAwait(v_bar).getPanType()
     assert isinstance(waittype, CrossList)
     assert isinstance(waittype._wrapped, CrossStr)
