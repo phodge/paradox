@@ -970,6 +970,25 @@ class PanCompare(PanExpr):
         return f"{_arg1} {comp} {_arg2}", PHPPrecedence.MultDiv
 
 
+class PanAwait(PanExpr):
+    def __init__(self, waitable: PanExpr) -> None:
+        self._waitable: PanExpr = waitable
+
+    def getPanType(self) -> CrossType:
+        return self._waitable.getPanType()
+
+    def getPyExpr(self) -> Tuple[str, PyPrecedence]:
+        inner = _wrapmult(self._waitable.getPyExpr())
+        return "await " + inner, PyPrecedence.AddSub
+
+    def getTSExpr(self) -> Tuple[str, TSPrecedence]:
+        inner = _wrapmult(self._waitable.getTSExpr())
+        return "await " + inner, TSPrecedence.AddSub
+
+    def getPHPExpr(self) -> Tuple[str, PHPPrecedence]:
+        raise NotSupportedError("PHP does not support await syntax")
+
+
 class HardCodedExpr(PanExpr):
     def __init__(
         self,
@@ -1113,3 +1132,7 @@ def islist(arg: Pannable) -> PanExpr:
 
 def isdict(arg: Pannable) -> PanExpr:
     return PanIsType(pan(arg), "dict")
+
+
+def await_(awaitable: PanExpr) -> PanAwait:
+    return PanAwait(awaitable)
