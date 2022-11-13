@@ -13,17 +13,20 @@ from typing import (
     Union,
 )
 
-from paradox.interfaces import NotSupportedError, TypeMissing
+from paradox.interfaces import InvalidLogic, NotSupportedError, TypeMissing
 from paradox.typing import (
     CrossAny,
     CrossBool,
+    CrossCustomType,
     CrossDict,
     CrossList,
     CrossNull,
     CrossNum,
     CrossOmit,
+    CrossOptional,
     CrossStr,
     CrossType,
+    CrossUnion,
     FlexiType,
     unflex,
 )
@@ -146,7 +149,8 @@ class PanExpr(abc.ABC):
         fallback: "PanExpr" = None,
     ) -> "PanIndexAccess":
         selftype = self.getPanType()
-        assert isinstance(selftype, CrossList) or isinstance(selftype, CrossAny)
+        if not _could_by_a_list(selftype):
+            raise InvalidLogic(f"Can't use getindex() on expr of type {selftype}")
         # TODO: check type of fallback if it is present
         return PanIndexAccess(self, idx, fallback)
 
@@ -1136,3 +1140,15 @@ def isdict(arg: Pannable) -> PanExpr:
 
 def await_(awaitable: PanExpr) -> PanAwait:
     return PanAwait(awaitable)
+
+
+def _could_by_a_list(t: CrossType) -> bool:
+    if isinstance(t, CrossUnion):
+        return any(_could_by_a_list(i) for i in t._inner)
+
+    if isinstance(t, CrossOptional):
+        return _could_by_a_list(t._inner)
+
+    # have to treat CrossCustomType like Any here since we don't have any information on whether it
+    # supports list index operations
+    return isinstance(t, (CrossList, CrossAny, CrossCustomType))
