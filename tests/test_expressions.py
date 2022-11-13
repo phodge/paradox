@@ -11,8 +11,16 @@ from paradox.expressions import (
     PanVar,
     pan,
 )
-from paradox.interfaces import NotSupportedError
-from paradox.typing import CrossAny, CrossList, CrossOmit, CrossStr, listof
+from paradox.interfaces import InvalidLogic, NotSupportedError
+from paradox.typing import (
+    CrossAny,
+    CrossList,
+    CrossOmit,
+    CrossStr,
+    listof,
+    maybe,
+    unionof,
+)
 
 # TODO: add tests for each of the following
 # - PanIsType
@@ -167,3 +175,19 @@ def test_PanAwait() -> None:
     waittype = PanAwait(v_bar).getPanType()
     assert isinstance(waittype, CrossList)
     assert isinstance(waittype._wrapped, CrossStr)
+
+
+def test_getindex() -> None:
+    # valid on a list of things
+    assert PanVar('foo', listof(int)).getindex(4).getPyExpr()[0] == 'foo[4]'
+
+    # valid for Any, or a union that contains a list of things, or a union that contains any
+    assert PanVar('foo', CrossAny()).getindex(4).getPyExpr()[0] == 'foo[4]'
+    assert PanVar('foo', unionof(listof(int), maybe(int))).getindex(4).getPyExpr()[0] == 'foo[4]'
+    assert PanVar('foo', maybe(listof(int))).getindex(4).getPyExpr()[0] == 'foo[4]'
+    assert PanVar('foo', maybe(CrossAny())).getindex(4).getPyExpr()[0] == 'foo[4]'
+
+    # verify that we get an InvalidLogic exception when we use getindex on an
+    # invalid type
+    with pytest.raises(InvalidLogic, match=r"Can't use getindex\(\) on expr of type"):
+        PanVar('foo', maybe(int)).getindex(0)
