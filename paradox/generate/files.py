@@ -32,12 +32,10 @@ class FileSpec(abc.ABC):
         self.contents.add_new_type(name, base, tsexport=tsexport)
 
     @abc.abstractmethod
-    def writefile(self) -> None:
-        ...
+    def writefile(self) -> None: ...
 
     @abc.abstractmethod
-    def makepretty(self) -> None:
-        ...
+    def makepretty(self) -> None: ...
 
 
 class FilePython(FileSpec):

@@ -76,16 +76,13 @@ def _pan_nodef(val: Union[Pannable, NoDefault]) -> Optional[PanExpr]:
 
 class Statement(WantsImports, abc.ABC):
     @abc.abstractmethod
-    def writepy(self, w: FileWriter) -> int:
-        ...
+    def writepy(self, w: FileWriter) -> int: ...
 
     @abc.abstractmethod
-    def writets(self, w: FileWriter) -> None:
-        ...
+    def writets(self, w: FileWriter) -> None: ...
 
     @abc.abstractmethod
-    def writephp(self, w: FileWriter) -> None:
-        ...
+    def writephp(self, w: FileWriter) -> None: ...
 
 
 class _StatementWithCustomImports(Statement):
